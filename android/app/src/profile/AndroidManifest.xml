@@ -4,4 +4,19 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <activity
+        android:exported="true"
+        android:name="pl.kolak.my_finances.MainActivity"
+        android:launchMode="singleTask"
+        android:exported="true"
+        android:hardwareAccelerated="true">
+        <intent-filter>
+            <action android:name="android.intent.action.SEND" />
+
+            <category android:name="android.intent.category.DEFAULT" />
+
+            <data android:mimeType="text/plain" />
+        </intent-filter>
+    </activity>
 </manifest>
