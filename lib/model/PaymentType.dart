@@ -1,0 +1,8 @@
+enum PaymentType {
+  OTHERS,
+  OTHERS_IMPORTANT,
+  TRANSPORT,
+  BILLS,
+  FOOD,
+  SAVINGS_ACCOUNT
+}
