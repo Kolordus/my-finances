@@ -1,6 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
+
+import 'package:my_finances/model/PaymentType.dart';
 
 class StepperInputScreenForFinance extends StatefulWidget {
   final String personName;
@@ -14,9 +17,29 @@ class StepperInputScreenForFinance extends StatefulWidget {
 
 class _StepperInputScreenForFinanceState
     extends State<StepperInputScreenForFinance> {
+  List<TextField> textFields = [];
+  List<TextEditingController> controllers = [];
   var _currentStep = 0;
   TextEditingController operationNameController = TextEditingController();
-  TextEditingController amountController = TextEditingController();
+  String selectedOperationType = '';
+
+  TextField textFieldWithAmount(TextEditingController controller) {
+    return TextField(
+      decoration: InputDecoration(hintText: "złotych"),
+      controller: controller,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      onChanged: (text) {
+        if (text.length > 2) {
+          var pln = text.substring(0, text.length - 2);
+          var gr = text.substring(text.length - 2);
+
+          controller.text = pln + '.' + gr;
+          controller.selection = TextSelection.fromPosition(
+              TextPosition(offset: controller.text.length));
+        }
+      },
+    );
+  }
 
   tapped(int step) {
     setState(() => _currentStep = step);
@@ -24,21 +47,26 @@ class _StepperInputScreenForFinanceState
 
   continued() {
     var isFinalStep = _currentStep == stepList().length - 1;
-    var isNotComplete = amountController.text.isEmpty || operationNameController.text.isEmpty;
-    if (isFinalStep) {
-      if (isNotComplete) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Form Incomplete!", textAlign: TextAlign.center,)));
-        return null;
-      }
-      String amount = amountController.text.replaceAll(".", "");
 
-      // zbiórka do jednego obiektu
-      // oraz zapis w bazie
+    if (!isFinalStep) {
+      _currentStep < stepList().length - 1
+          ? setState(() => {_currentStep += 1})
+          : null;
+      return;
+    }
 
+    var isActionNotSelected = selectedOperationType == '';
+    var noAmountGiven = getTextFromControllers() == '0.0';
+
+    if (isActionNotSelected || noAmountGiven) {
+
+      const snackBar = SnackBar(
+        content: Text('Form incomplete'),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    } else {
       Navigator.pop(context);
     }
-    _currentStep < 2 ? setState(() => {_currentStep += 1}) : null;
   }
 
   cancel() {
@@ -65,10 +93,11 @@ class _StepperInputScreenForFinanceState
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                        primary: Colors.green,
+                      primary: Colors.green,
                     ),
                     onPressed: continued,
-                    child: isFinalStep ? const Text("Finish") : const Text("Next"),
+                    child:
+                        isFinalStep ? const Text("Finish") : const Text("Next"),
                   ),
                 ),
                 const SizedBox(
@@ -105,47 +134,120 @@ class _StepperInputScreenForFinanceState
                   controller: operationNameController),
             ],
           ),
-          isActive: _currentStep >= 0,
-          state: _currentStep >= 0 ? StepState.complete : StepState.disabled,
+          isActive: _currentStep == 0,
+          state: _currentStep == 0 ? StepState.complete : StepState.disabled,
+        ),
+        Step(
+          title: Text(
+            "Rodzaj",
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Container(
+            child: DropdownButton(
+                value: selectedOperationType,
+                items: PaymentType.values
+                    .map<DropdownMenuItem<String>>((PaymentType value) {
+                  return DropdownMenuItem<String>(
+                    value: value.name,
+                    child: Text(value.name.toLowerCase().replaceAll("_", " ")),
+                  );
+                }).toList(),
+                onChanged: (String? selected) {
+                  setState(() {
+                    selectedOperationType = selected!;
+                  });
+                }),
+          ),
+          isActive: _currentStep == 1,
+          state: _currentStep > 1 ? StepState.complete : StepState.disabled,
         ),
         Step(
           title: Text("Kwota", style: TextStyle(color: Colors.white)),
           content: Column(
             children: [
-              TextField(
-                decoration: InputDecoration(hintText: "złotych"),
-                controller: amountController,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                onChanged: (text) {
-                  if (text.length > 2) {
-                    var pln = text.substring(0, text.length - 2);
-                    var gr = text.substring(text.length - 2);
-
-                    amountController.text = pln + '.' + gr;
-                    amountController.selection = TextSelection.fromPosition(
-                        TextPosition(offset: amountController.text.length));
-                  }
+              ListView.builder(
+                shrinkWrap: true,
+                itemCount: this.textFields.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return Container(child: this.textFields.elementAt(index));
                 },
               ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: InkWell(
+                    child: Icon(Icons.add, size: 35, color: Colors.white),
+                    onTap: () {
+                      final controller = TextEditingController();
+                      var textField = textFieldWithAmount(controller);
+
+                      setState(() {
+                        this.textFields.add(textField);
+                        this.controllers.add(controller);
+                      });
+                    }),
+              )
             ],
           ),
-          isActive: _currentStep >= 1,
-          state: _currentStep >= 1 ? StepState.complete : StepState.disabled,
+          isActive: _currentStep == 2,
+          state: _currentStep > 2 ? StepState.complete : StepState.disabled,
         ),
         Step(
           title: Text("Podsumowanie", style: TextStyle(color: Colors.white)),
-          content: Column(
-            children: [
-              Text(widget.now.toLocal().toString().substring(0, 16)),
-              Text(operationNameController.text),
-              amountController.text.isNotEmpty
-                  ? Text(
-                      (double.parse(amountController.text)).toString() + " PLN")
-                  : Text("Form is incomplete!!", style: TextStyle(color: Colors.red, fontSize: 20),)
-            ],
+          content: Container(
+            decoration: BoxDecoration(
+                color: Colors.blue[200],
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+
+            ),
+            padding: EdgeInsets.all(15.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Text(widget.now.toLocal().toString().substring(0, 16)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Text("NAME: ", style: labelTextStyle()),
+                    Text(operationNameController.text.isEmpty ? "NO OPERATION NAME" : operationNameController.text,
+                        style: contentTextStyle()),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Text("TYPE: ", style: labelTextStyle()),
+                    Text(selectedOperationType.isEmpty ? "NO OPERATION TYPE SELECTED" : selectedOperationType.toLowerCase().replaceAll("_", " "),
+                    style: contentTextStyle()),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Text("AMOUNT: ", style: labelTextStyle()),
+                    Text(getTextFromControllers() == '0.0' ? "WRONG AMOUNT GIVEN" : getTextFromControllers() + " PLN",
+                    style: contentTextStyle()),
+                  ],
+                )
+              ],
+            ),
           ),
-          isActive: _currentStep >= 2,
-          state: StepState.complete,
+          isActive: _currentStep == 3,
+          state: StepState.editing,
         )
       ];
+
+  TextStyle contentTextStyle() => TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.indigo);
+
+  TextStyle labelTextStyle() => TextStyle(fontWeight: FontWeight.bold, fontSize: 15);
+
+  String getTextFromControllers() {
+    double amount = 0.0;
+    this.controllers.forEach((element) {
+      if (element.text.isNotEmpty) {
+        amount += double.parse(element.text);
+      }
+    });
+
+    return amount.toString();
+  }
 }
