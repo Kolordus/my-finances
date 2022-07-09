@@ -1,15 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
-
 import 'package:my_finances/model/PaymentType.dart';
 
 class StepperInputScreenForFinance extends StatefulWidget {
-  final String personName;
-  final DateTime now;
 
-  StepperInputScreenForFinance(this.personName, this.now);
+  StepperInputScreenForFinance();
 
   @override
   State<StatefulWidget> createState() => _StepperInputScreenForFinanceState();
@@ -21,7 +16,14 @@ class _StepperInputScreenForFinanceState
   List<TextEditingController> controllers = [];
   var _currentStep = 0;
   TextEditingController operationNameController = TextEditingController();
-  String selectedOperationType = '';
+  String selectedOperationType = PaymentType.OTHERS.name;
+
+
+  @override
+  void initState() {
+    print(PaymentType.values);
+
+  }
 
   TextField textFieldWithAmount(TextEditingController controller) {
     return TextField(
@@ -59,7 +61,6 @@ class _StepperInputScreenForFinanceState
     var noAmountGiven = getTextFromControllers() == '0.0';
 
     if (isActionNotSelected || noAmountGiven) {
-
       const snackBar = SnackBar(
         content: Text('Form incomplete'),
       );

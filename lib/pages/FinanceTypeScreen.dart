@@ -183,7 +183,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                     Navigator.push(
                         this.context,
                         MaterialPageRoute(
-                            builder: (context) => StepperInputScreenForFinance("", DateTime.now())
+                            builder: (context) => StepperInputScreenForFinance()
                         )
                     );
 
