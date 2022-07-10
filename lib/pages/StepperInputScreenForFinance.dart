@@ -1,29 +1,31 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
+import 'dart:ui';
+
 import 'package:my_finances/model/PaymentType.dart';
+import 'package:my_finances/model/PersistedPayment.dart';
 
 class StepperInputScreenForFinance extends StatefulWidget {
 
-  StepperInputScreenForFinance();
+  final String paymentMethod;
+
+  StepperInputScreenForFinance(this.paymentMethod);
 
   @override
   State<StatefulWidget> createState() => _StepperInputScreenForFinanceState();
 }
 
-class _StepperInputScreenForFinanceState
-    extends State<StepperInputScreenForFinance> {
+class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFinance> {
+  var _currentStep = 0;
+
   List<TextField> textFields = [];
   List<TextEditingController> controllers = [];
-  var _currentStep = 0;
   TextEditingController operationNameController = TextEditingController();
+
   String selectedOperationType = PaymentType.OTHERS.name;
-
-
-  @override
-  void initState() {
-    print(PaymentType.values);
-
-  }
+  String amountStr = '';
 
   TextField textFieldWithAmount(TextEditingController controller) {
     return TextField(
@@ -47,7 +49,7 @@ class _StepperInputScreenForFinanceState
     setState(() => _currentStep = step);
   }
 
-  continued() {
+  continued() async {
     var isFinalStep = _currentStep == stepList().length - 1;
 
     if (!isFinalStep) {
@@ -58,16 +60,32 @@ class _StepperInputScreenForFinanceState
     }
 
     var isActionNotSelected = selectedOperationType == '';
-    var noAmountGiven = getTextFromControllers() == '0.0';
+    var noAmountGiven = this.amountStr == '0.0';
 
     if (isActionNotSelected || noAmountGiven) {
+
       const snackBar = SnackBar(
         content: Text('Form incomplete'),
       );
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
     } else {
-      Navigator.pop(context);
+      var createdPayment = PersistedPayment.createPayment(operationNameController.text,
+          getDate(),
+          amountStr,
+          selectedOperationType,
+          widget.paymentMethod);
+
+      var paymentsBox = Hive.box<PersistedPayment>('payments');
+      await paymentsBox.add(createdPayment);
+
+      Navigator.pop(context, createdPayment);
     }
+  }
+
+  String getDate() {
+    DateTime date = DateTime.now();
+
+    return "${date.year}-${date.month}-${date.day} ${date.hour}:${date.minute}";
   }
 
   cancel() {
@@ -76,6 +94,7 @@ class _StepperInputScreenForFinanceState
 
   @override
   Widget build(BuildContext context) {
+    this.amountStr = getTextFromControllers();
     return Scaffold(
       backgroundColor: Colors.blueAccent,
       body: Stepper(
@@ -225,7 +244,7 @@ class _StepperInputScreenForFinanceState
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     Text("AMOUNT: ", style: labelTextStyle()),
-                    Text(getTextFromControllers() == '0.0' ? "WRONG AMOUNT GIVEN" : getTextFromControllers() + " PLN",
+                    Text(this.amountStr == '0.0' ? "WRONG AMOUNT" : this.amountStr + " PLN",
                     style: contentTextStyle()),
                   ],
                 )
@@ -242,13 +261,12 @@ class _StepperInputScreenForFinanceState
   TextStyle labelTextStyle() => TextStyle(fontWeight: FontWeight.bold, fontSize: 15);
 
   String getTextFromControllers() {
-    double amount = 0.0;
-    this.controllers.forEach((element) {
-      if (element.text.isNotEmpty) {
-        amount += double.parse(element.text);
-      }
-    });
-
-    return amount.toString();
+      double amount = 0.0;
+      this.controllers.forEach((element) {
+        if (element.text.isNotEmpty) {
+          amount += double.parse(element.text);
+        }
+      });
+      return amount.toString();
   }
 }

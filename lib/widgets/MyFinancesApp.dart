@@ -9,7 +9,6 @@ class MyFinancesApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'My finances',
       theme: ThemeData(
-        primarySwatch: Colors.blueGrey,
       ),
       home: MyHomePage(),
     );
