@@ -1,12 +1,13 @@
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:my_finances/dal/Database.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
 
 class LastActions extends StatefulWidget {
-  LastActions({Key? key, required this.paymentMethod}) : super(key: key);
+  LastActions({Key? key, required this.paymentMethod, required this.refreshFunction}) : super(key: key);
 
   final String paymentMethod;
+  final Function refreshFunction;
 
   @override
   _LastActionsState createState() => _LastActionsState();
@@ -15,39 +16,18 @@ class LastActions extends StatefulWidget {
 class _LastActionsState extends State<LastActions> {
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: _getActionsFromDB(widget.paymentMethod),
+        future: Database.getDatabase().getEntriesByPaymentMethod(widget.paymentMethod),
         builder: (builder, snapshot) {
           return snapshot.connectionState == ConnectionState.waiting
               ? Center(child: CircularProgressIndicator())
-              : renderLastActionsWidget(snapshot.data, context);
+              : _renderLastActionsWidget(snapshot.data, context);
         });
   }
 
-  _getActionsFromDB(String paymentMethod) async {
-    var paymentsBox = Hive.box<PersistedPayment>('payments');
-    List<PersistedPayment> paymentList = [];
-
-    paymentsBox.keys.forEach((element) {
-      var persistedPayment = paymentsBox.get(element);
-
-      if (persistedPayment?.paymentMethod == paymentMethod) {
-        paymentList.add(persistedPayment!);
-      }
-    });
-
-    return paymentList;
-  }
-
-  Widget renderLastActionsWidget(_paymentList, context) {
+  Widget _renderLastActionsWidget(_paymentList, context) {
     var actionsAmount = _paymentList?.length ?? 0;
-    var deviceWidth = MediaQuery.of(context).size.width;
 
     return actionsAmount == 0 ? Center(child: Text('Nothing to show')) :
     Container(
@@ -57,7 +37,9 @@ class _LastActionsState extends State<LastActions> {
           itemBuilder: (context, index) {
             PersistedPayment currentElement = _paymentList!.elementAt(index);
             return GestureDetector(
-              onDoubleTap: () => deletePayment(currentElement.time),
+              onDoubleTap: () async => {
+                await _deletePayment(currentElement.time),
+              },
               child: Container(
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.all(Radius.circular(10))),
@@ -96,23 +78,11 @@ class _LastActionsState extends State<LastActions> {
 
   }
 
-
-  deletePayment(String time) async {
-    var box = Hive.box<PersistedPayment>('payments');
-
-    box.keys.forEach((key) {
-      var persistedPayment = box.get(key);
-      if (isWanted(persistedPayment, time)) {
-          box.delete(key);
-          setState(() {});
-          return ;
-        }
-      }
-    );
+  Future<void>_deletePayment(String time) async {
+    await Database.getDatabase().deletePayment(time, widget.paymentMethod);
+    await Future.delayed(Duration(milliseconds: 10));
+    await widget.refreshFunction();
   }
-
-  bool isWanted(PersistedPayment? persistedPayment, String time) => persistedPayment?.time == time && persistedPayment?.paymentMethod == widget.paymentMethod;
-
 }
 
 

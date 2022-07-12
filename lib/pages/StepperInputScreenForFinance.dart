@@ -1,14 +1,12 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:hive/hive.dart';
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:my_finances/dal/Database.dart';
 import 'package:my_finances/model/PaymentType.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
 
 class StepperInputScreenForFinance extends StatefulWidget {
-
   final String paymentMethod;
 
   StepperInputScreenForFinance(this.paymentMethod);
@@ -26,6 +24,16 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
 
   String selectedOperationType = PaymentType.OTHERS.name;
   String amountStr = '';
+
+
+  @override
+  void initState() {
+    final controller = TextEditingController();
+    var textField = textFieldWithAmount(controller);
+
+    this.textFields.add(textField);
+    this.controllers.add(controller);
+  }
 
   TextField textFieldWithAmount(TextEditingController controller) {
     return TextField(
@@ -63,29 +71,25 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
     var noAmountGiven = this.amountStr == '0.0';
 
     if (isActionNotSelected || noAmountGiven) {
-
       const snackBar = SnackBar(
         content: Text('Form incomplete'),
       );
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
-    } else {
-      var createdPayment = PersistedPayment.createPayment(operationNameController.text,
-          getDate(),
-          amountStr,
-          selectedOperationType,
-          widget.paymentMethod);
 
-      var paymentsBox = Hive.box<PersistedPayment>('payments');
-      await paymentsBox.add(createdPayment);
-
-      Navigator.pop(context, createdPayment);
+      return;
     }
-  }
 
-  String getDate() {
-    DateTime date = DateTime.now();
+    var createdPayment = PersistedPayment.createPayment(
+        operationNameController.text,
+        amountStr,
+        selectedOperationType,
+        widget.paymentMethod);
 
-    return "${date.year}-${date.month}-${date.day} ${date.hour}:${date.minute}";
+    await Database
+        .getDatabase()
+        .savePayment(widget.paymentMethod, createdPayment);
+
+    Navigator.pop(context, createdPayment);
   }
 
   cancel() {
@@ -215,9 +219,8 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
           title: Text("Podsumowanie", style: TextStyle(color: Colors.white)),
           content: Container(
             decoration: BoxDecoration(
-                color: Colors.blue[200],
-                borderRadius: BorderRadius.all(Radius.circular(10)),
-
+              color: Colors.blue[200],
+              borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
             padding: EdgeInsets.all(15.0),
             child: Column(
@@ -228,7 +231,10 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     Text("NAME: ", style: labelTextStyle()),
-                    Text(operationNameController.text.isEmpty ? "NO OPERATION NAME" : operationNameController.text,
+                    Text(
+                        operationNameController.text.isEmpty
+                            ? "NO OPERATION NAME"
+                            : operationNameController.text,
                         style: contentTextStyle()),
                   ],
                 ),
@@ -236,16 +242,24 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     Text("TYPE: ", style: labelTextStyle()),
-                    Text(selectedOperationType.isEmpty ? "NO OPERATION TYPE SELECTED" : selectedOperationType.toLowerCase().replaceAll("_", " "),
-                    style: contentTextStyle()),
+                    Text(
+                        selectedOperationType.isEmpty
+                            ? "NO OPERATION TYPE SELECTED"
+                            : selectedOperationType
+                                .toLowerCase()
+                                .replaceAll("_", " "),
+                        style: contentTextStyle()),
                   ],
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     Text("AMOUNT: ", style: labelTextStyle()),
-                    Text(this.amountStr == '0.0' ? "WRONG AMOUNT" : this.amountStr + " PLN",
-                    style: contentTextStyle()),
+                    Text(
+                        this.amountStr == '0.0'
+                            ? "WRONG AMOUNT"
+                            : this.amountStr + " PLN",
+                        style: contentTextStyle()),
                   ],
                 )
               ],
@@ -256,17 +270,19 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
         )
       ];
 
-  TextStyle contentTextStyle() => TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.indigo);
+  TextStyle contentTextStyle() => TextStyle(
+      fontWeight: FontWeight.bold, fontSize: 20, color: Colors.indigo);
 
-  TextStyle labelTextStyle() => TextStyle(fontWeight: FontWeight.bold, fontSize: 15);
+  TextStyle labelTextStyle() =>
+      TextStyle(fontWeight: FontWeight.bold, fontSize: 15);
 
   String getTextFromControllers() {
-      double amount = 0.0;
-      this.controllers.forEach((element) {
-        if (element.text.isNotEmpty) {
-          amount += double.parse(element.text);
-        }
-      });
-      return amount.toString();
+    double amount = 0.0;
+    this.controllers.forEach((element) {
+      if (element.text.isNotEmpty) {
+        amount += double.parse(element.text);
+      }
+    });
+    return amount.toString();
   }
 }

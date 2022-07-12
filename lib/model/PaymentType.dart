@@ -6,4 +6,5 @@ enum PaymentType {
   SAVINGS_ACCOUNT,
   OTHERS,
   OTHERS_IMPORTANT,
+  INCOME
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+
 import '../model/PersistedPayment.dart';
 import '../widgets/MyFinancesApp.dart';
 
@@ -19,6 +20,7 @@ Future<void> initHiveDb() async {
   Hive.registerAdapter<PersistedPayment>(PersistedPaymentAdapter());
 
   await Hive.openBox<PersistedPayment>('payments');
+  await Hive.openBox<double>('amounts');
 }
 
 

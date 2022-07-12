@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-
+import '../dal/Database.dart';
 import 'FinanceTypeScreen.dart';
 import 'TotalScreen.dart';
 
@@ -63,7 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
-    Hive.close();
+    Database.getDatabase().close();
     super.dispose();
   }
 }

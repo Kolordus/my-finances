@@ -1,10 +1,9 @@
 // ignore: import_of_legacy_library_into_null_safe
 
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
 
-import '../components/PrefController.dart';
+import '../dal/Database.dart';
 import '../widgets/LastActions.dart';
 import 'StepperInputScreenForFinance.dart';
 
@@ -34,7 +33,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
   void initState() {
     super.initState();
 
-    _amount = getTotalAmountForType(widget.title);
+    refreshTotalAmount();
 
     if (widget.title == 'Card') backgroundImage = "assets/images/bank-card.jpg";
     if (widget.title == 'Cash') backgroundImage = "assets/images/notes.jpg";
@@ -49,10 +48,8 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                 image: AssetImage(backgroundImage),
                 fit: BoxFit.cover,
                 opacity: 1000,
-              colorFilter: ColorFilter.mode(Colors.lightBlueAccent, BlendMode.color)
-            )
-
-        ),
+                colorFilter:
+                    ColorFilter.mode(Colors.lightBlueAccent, BlendMode.color))),
         child: Padding(
           padding: EdgeInsets.all(1.0),
           child: Column(
@@ -62,13 +59,10 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
               Flexible(
                 flex: 1,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0,20,0,0),
+                  padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
                   child: Text(_amount.toDouble().toStringAsFixed(2),
-                      style: TextStyle(
-                          fontSize: 70,
-                          color: _amount.toDouble() >= 0
-                              ? Colors.amberAccent
-                              : Colors.redAccent)),
+                      style:
+                          TextStyle(fontSize: 70, color: Colors.amberAccent)),
                 ),
               ),
               Flexible(
@@ -83,21 +77,24 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                             borderRadius: BorderRadius.circular(18.0),
                           ))),
                       onPressed: () async {
-                        PersistedPayment createdPayment = await Navigator.push(
+                        PersistedPayment? createdPayment = await Navigator.push(
                             this.context,
                             MaterialPageRoute(
                                 builder: (context) =>
-                                    new StepperInputScreenForFinance(widget.title)));
+                                    new StepperInputScreenForFinance(
+                                        widget.title)));
 
-                        setState(() {
+                        if (createdPayment == null) {return;}
 
-                        });
+                        await refreshTotalAmount();
                       },
                       child: Icon(Icons.add))),
               // onPressed: _saveNewPayment, child: Icon(Icons.add))),
               Expanded(
                   flex: 4,
-                  child: LastActions(paymentMethod: widget.title))
+                  child: LastActions(
+                      paymentMethod: widget.title,
+                      refreshFunction: refreshTotalAmount))
             ],
           ),
         ),
@@ -105,31 +102,15 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
     );
   }
 
-  refreshAndUpdateAmount(String amountToSubtract) async {
-    double previousAmount = 0;
+  Future<void> refreshTotalAmount() async {
+    Database db = Database.getDatabase();
+    String paymentMethod = widget.title;
 
-    await PrefController.getAmountPref(widget.title)
-        .then((persistedValue) => {previousAmount = double.parse(persistedValue)});
+    double savedValue = await db.getSavedCashOrCard(paymentMethod);
 
-    var amountToSubtractAsDouble = double.parse(amountToSubtract);
+    setState(() {
+      this._amount = savedValue;
+    });
 
-    var result = previousAmount - amountToSubtractAsDouble;
-
-    print(previousAmount);
-    print(amountToSubtractAsDouble);
-    print(result);
-
-    PrefController.saveAmountPref(widget.title, result);
-  }
-
-  double getTotalAmountForType(title) {
-    var box = Hive.box<PersistedPayment>('payments');
-    double totalAmount = 0.0;
-    box.values
-        .where((e) => e.paymentMethod == title)
-        .map((e) => double.parse(e.amount))
-        .forEach((number) { totalAmount += number;});
-
-    return totalAmount;
   }
 }

@@ -24,8 +24,14 @@ class PersistedPayment {
 
   PersistedPayment(this.name, this.time, this.amount, this.paymentType, this.paymentMethod);
 
-  static PersistedPayment createPayment(name, time, amount, paymentType, paymentMethod) {
-    return new PersistedPayment(name, time, amount, paymentType, paymentMethod);
+  static PersistedPayment createPayment(name, amount, paymentType, paymentMethod) {
+    return new PersistedPayment(name, getDate(), amount, paymentType, paymentMethod);
+  }
+
+  static String getDate() {
+    DateTime date = DateTime.now();
+
+    return "${date.year}-${date.month}-${date.day} ${date.hour}:${date.minute}";
   }
 
   Map<String, Object?> toJson() => {
