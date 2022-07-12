@@ -42,15 +42,8 @@ class Database {
         .forEach((entry) {
           var entryAmount = double.parse(entry.amount);
 
-          entryAmount = entry.paymentType == "INCOME" ? entryAmount *= -1 : entryAmount;
-
-          // print(entry);
-          // if (entry.paymentType != "INCOME") {
-          //   totalAmount += entryAmount;
-          // }
-          // else {
-          //   totalAmount -= entryAmount;
-          // }
+          /// this happen because it's already calculated for INCOME in method calling this method
+          totalAmount = entry.paymentType == "INCOME" ? 0 : totalAmount += entryAmount;
 
     });
 
@@ -91,24 +84,10 @@ class Database {
     double entryAmount = double.parse(persistedPayment!.amount);
 
     entryAmount = persistedPayment.paymentType == "INCOME" ? entryAmount *= -1 : entryAmount;
+
     double newAmount = currentAmount! + entryAmount;
     return newAmount;
   }
-
-  // getAllByPaymentMethod(String paymentMethod) async {
-  //   var paymentsBox = Hive.box<PersistedPayment>('payments');
-  //   List<PersistedPayment> paymentList = [];
-  //
-  //   paymentsBox.keys.forEach((element) {
-  //     var persistedPayment = paymentsBox.get(element);
-  //
-  //     if (persistedPayment?.paymentMethod == paymentMethod) {
-  //       paymentList.add(persistedPayment!);
-  //     }
-  //   });
-  //
-  //   return paymentList;
-  // }
 
   Future<void> addToBank(String amount, String incomeNameAmount, String paymentMethod, bool isSalary) async {
     double? previousAmount = _cashAndCardAmount!.get(paymentMethod);
