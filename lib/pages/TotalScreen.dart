@@ -174,7 +174,7 @@ class _TotalScreenState extends State<TotalScreen> {
                                         this.isSelected.elementAt(0)
                                             ? "Card"
                                             : "Cash";
-                                    await Database.getDatabase().addToBank(
+                                    await Database.getDatabase().addNewIncomeToBank(
                                         addToBankAmountController.text,
                                         incomeNameController.text,
                                         whatIsSelected,

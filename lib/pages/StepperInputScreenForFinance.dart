@@ -28,6 +28,7 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
 
   @override
   void initState() {
+    super.initState();
     final controller = TextEditingController();
     var textField = textFieldWithAmount(controller);
 
@@ -87,7 +88,7 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
 
     await Database
         .getDatabase()
-        .savePayment(widget.paymentMethod, createdPayment);
+        .savePayment(createdPayment);
 
     Navigator.pop(context, createdPayment);
   }

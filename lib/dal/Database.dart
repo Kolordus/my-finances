@@ -6,7 +6,6 @@ import 'package:my_finances/model/PaymentType.dart';
 import '../model/PersistedPayment.dart';
 
 class Database {
-
   static Database _instance = Database();
 
   Box<PersistedPayment>? _paymentsBox;
@@ -31,82 +30,87 @@ class Database {
     return _instance;
   }
 
-  Future<void> savePayment(String paymentMethod, PersistedPayment createdPayment) async {
-    await _paymentsBox!.add(createdPayment);
+  Future<void> savePayment(PersistedPayment payment) async {
+    await _paymentsBox!.add(payment);
 
     double totalAmount = 0.0;
 
-    var listByMethod = await this.getEntriesByPaymentMethod(paymentMethod);
+    var filteredList =
+        await this.getEntriesByPaymentMethod(payment.paymentMethod);
+    filteredList.forEach((entry) {
+      var entryAmount = double.parse(entry.amount);
 
-    listByMethod
-        .forEach((entry) {
-          var entryAmount = double.parse(entry.amount);
-
-          /// this happen because it's already calculated for INCOME in method calling this method
-          totalAmount = entry.paymentType == "INCOME" ? 0 : totalAmount += entryAmount;
+      totalAmount += entry.paymentType == "INCOME" ? 0 : entryAmount;
 
     });
 
-    var currentAmount = this._cashAndCardAmount!.get(paymentMethod);
+    var currentAmount = this._cashAndCardAmount!.get(payment.paymentMethod);
 
-    this._cashAndCardAmount!.put(paymentMethod, currentAmount! - totalAmount);
+    _cashAndCardAmount!
+        .put(payment.paymentMethod, currentAmount! - totalAmount);
   }
 
-  Future<List<PersistedPayment>> getEntriesByPaymentMethod(String paymentMethod) async {
+  Future<List<PersistedPayment>> getEntriesByPaymentMethod(
+      String paymentMethod) async {
     return await _paymentsBox!.values
-      .where((element) => element.paymentMethod == paymentMethod)
-      .toList();
+        .where((element) => element.paymentMethod == paymentMethod)
+        .toList();
   }
 
   getSumOfEntries(List<PersistedPayment> list) {
     double totalAmount = 0;
-    list.map((e) => double.parse(e.amount))
-        .forEach((element) {totalAmount += element;});
+    list.map((e) => double.parse(e.amount)).forEach((element) {
+      totalAmount += element;
+    });
 
     return totalAmount;
   }
-
 
   Future<void> deletePayment(String time, String paymentMethod) async {
     _paymentsBox!.keys.forEach((key) async {
       PersistedPayment? persistedPayment = _paymentsBox!.get(key);
       if (isWanted(persistedPayment, time, paymentMethod)) {
         await _paymentsBox!.delete(key);
-        await _cashAndCardAmount!.put(paymentMethod, _calculateAmount(paymentMethod, persistedPayment));
-
-        return ;
-      }}
-    );
+        await _cashAndCardAmount!.put(
+            paymentMethod, _calculateAmount(persistedPayment));
+      }
+    });
   }
 
-  double _calculateAmount(String paymentMethod, PersistedPayment? persistedPayment) {
-    double? currentAmount = _cashAndCardAmount!.get(paymentMethod);
-    double entryAmount = double.parse(persistedPayment!.amount);
+  double _calculateAmount(PersistedPayment? persistedPayment) {
+    double? currentAmount = _cashAndCardAmount!.get(persistedPayment!.paymentMethod);
+    double entryAmount = double.parse(persistedPayment.amount);
 
-    entryAmount = persistedPayment.paymentType == "INCOME" ? entryAmount *= -1 : entryAmount;
+    entryAmount = persistedPayment.paymentType == "INCOME"
+        ? entryAmount *= -1
+        : entryAmount;
 
     double newAmount = currentAmount! + entryAmount;
     return newAmount;
   }
 
-  Future<void> addToBank(String amount, String incomeNameAmount, String paymentMethod, bool isSalary) async {
-    double? previousAmount = _cashAndCardAmount!.get(paymentMethod);
-
-    double newAmount = previousAmount! + double.parse(amount);
-
-    await _cashAndCardAmount!.put(paymentMethod, newAmount);
+  Future<void> addNewIncomeToBank(String amount, String incomeNameAmount,
+      String paymentMethod, bool isSalary) async {
+    await _calculateAndSaveAmount(paymentMethod, amount);
 
     if (isSalary) {
-      await Database.getDatabase()
-          .clearEntries();
-
-      return;
+      await Database.getDatabase().clearEntries();
+    } else {
+      _saveInEntryList(incomeNameAmount, amount, paymentMethod);
     }
-    else {
-      PersistedPayment createPayment = PersistedPayment.createPayment(incomeNameAmount, amount, PaymentType.INCOME.name, paymentMethod);
-      savePayment(paymentMethod, createPayment);
-    }
+  }
 
+  _saveInEntryList(String operationName, String amount, String paymentMethod) {
+    PersistedPayment createPayment = PersistedPayment.createPayment(
+        operationName, amount, PaymentType.INCOME.name, paymentMethod);
+
+    savePayment(createPayment);
+  }
+
+  Future<void> _calculateAndSaveAmount(String payMethod, String amount) async {
+    double? previousAmount = _cashAndCardAmount!.get(payMethod);
+    double newAmount = previousAmount! + double.parse(amount);
+    await _cashAndCardAmount!.put(payMethod, newAmount);
   }
 
   getSavedCashOrCard(String paymentMethod) {
@@ -114,17 +118,17 @@ class Database {
     return previousAmount!;
   }
 
-
   clearEntries() async {
     return _paymentsBox!.clear();
   }
-
 
   Future<void> close() async {
     await Hive.close();
   }
 
-  bool isWanted(PersistedPayment? persistedPayment, String time, String paymentMethod) => persistedPayment?.time == time && persistedPayment?.paymentMethod == paymentMethod;
+  bool isWanted(PersistedPayment? payment, String time, String payMethod) =>
+      payment?.time == time &&
+      payment?.paymentMethod == payMethod;
 
-  // todo: zrobić opcję wyciągania kabony z bankomatu - dodaje cash odejmuje z card
+// todo: zrobić opcję wyciągania kabony z bankomatu - dodaje cash odejmuje z card
 }
