@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:my_finances/dal/Database.dart';
 import 'package:my_finances/model/PaymentType.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
+import 'package:my_finances/widgets/DropDownWithValues.dart';
 
 class StepperInputScreenForFinance extends StatefulWidget {
   final String paymentMethod;
@@ -15,7 +16,8 @@ class StepperInputScreenForFinance extends StatefulWidget {
   State<StatefulWidget> createState() => _StepperInputScreenForFinanceState();
 }
 
-class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFinance> {
+class _StepperInputScreenForFinanceState
+    extends State<StepperInputScreenForFinance> {
   var _currentStep = 0;
 
   List<TextField> textFields = [];
@@ -24,7 +26,6 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
 
   String selectedOperationType = PaymentType.OTHERS.name;
   String amountStr = '';
-
 
   @override
   void initState() {
@@ -86,9 +87,7 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
         selectedOperationType,
         widget.paymentMethod);
 
-    await Database
-        .getDatabase()
-        .savePayment(createdPayment);
+    await Database.getDatabase().savePayment(createdPayment);
 
     Navigator.pop(context, createdPayment);
   }
@@ -99,7 +98,7 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
 
   @override
   Widget build(BuildContext context) {
-    this.amountStr = getTextFromControllers();
+    this.amountStr = _getTextFromControllers();
     return Scaffold(
       backgroundColor: Colors.blueAccent,
       body: Stepper(
@@ -168,18 +167,10 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
             style: TextStyle(color: Colors.white),
           ),
           content: Container(
-            child: DropdownButton(
-                value: selectedOperationType,
-                items: PaymentType.values
-                    .map<DropdownMenuItem<String>>((PaymentType value) {
-                  return DropdownMenuItem<String>(
-                    value: value.name,
-                    child: Text(value.name.toLowerCase().replaceAll("_", " ")),
-                  );
-                }).toList(),
-                onChanged: (String? selected) {
+            child: DropDownWithValues(selectedOperationType: selectedOperationType,
+                refreshParent: (String selected) {
                   setState(() {
-                    selectedOperationType = selected!;
+                    selectedOperationType = selected;
                   });
                 }),
           ),
@@ -227,40 +218,35 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Text(widget.now.toLocal().toString().substring(0, 16)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Text("NAME: ", style: labelTextStyle()),
-                    Text(
-                        operationNameController.text.isEmpty
-                            ? "NO OPERATION NAME"
-                            : operationNameController.text,
-                        style: contentTextStyle()),
+                    Text("NAME: ", style: _labelTextStyle()),
+                    Text(_operationName(), style: _contentTextStyle()),
                   ],
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Text("TYPE: ", style: labelTextStyle()),
+                    Text("TYPE: ", style: _labelTextStyle()),
                     Text(
                         selectedOperationType.isEmpty
                             ? "NO OPERATION TYPE SELECTED"
                             : selectedOperationType
                                 .toLowerCase()
                                 .replaceAll("_", " "),
-                        style: contentTextStyle()),
+                        style: _contentTextStyle()),
                   ],
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Text("AMOUNT: ", style: labelTextStyle()),
+                    Text("AMOUNT: ", style: _labelTextStyle()),
                     Text(
                         this.amountStr == '0.0'
                             ? "WRONG AMOUNT"
                             : this.amountStr + " PLN",
-                        style: contentTextStyle()),
+                        style: _contentTextStyle()),
                   ],
                 )
               ],
@@ -271,13 +257,21 @@ class _StepperInputScreenForFinanceState extends State<StepperInputScreenForFina
         )
       ];
 
-  TextStyle contentTextStyle() => TextStyle(
+  String _operationName() {
+    String text = operationNameController.text.isEmpty
+        ? "NO OPERATION NAME"
+        : operationNameController.text;
+
+    return text.length > 10 ? text.substring(0, 10) + "..." : text;
+  }
+
+  TextStyle _contentTextStyle() => TextStyle(
       fontWeight: FontWeight.bold, fontSize: 20, color: Colors.indigo);
 
-  TextStyle labelTextStyle() =>
+  TextStyle _labelTextStyle() =>
       TextStyle(fontWeight: FontWeight.bold, fontSize: 15);
 
-  String getTextFromControllers() {
+  String _getTextFromControllers() {
     double amount = 0.0;
     this.controllers.forEach((element) {
       if (element.text.isNotEmpty) {

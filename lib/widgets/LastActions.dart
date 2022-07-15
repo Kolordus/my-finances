@@ -2,87 +2,123 @@
 import 'package:flutter/material.dart';
 import 'package:my_finances/dal/Database.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
+import 'package:my_finances/widgets/SingleEntry.dart';
 
-class LastActions extends StatefulWidget {
-  LastActions({Key? key, required this.paymentMethod, required this.refreshFunction}) : super(key: key);
+import '../model/Filters.dart';
+
+class LastActions extends StatelessWidget {
+  LastActions(
+      {Key? key,
+      required this.paymentMethod,
+      required this.refreshFunction,
+      required this.groupByCategories,
+      required this.filters})
+      : super(key: key);
 
   final String paymentMethod;
   final Function refreshFunction;
-
-  @override
-  _LastActionsState createState() => _LastActionsState();
-}
-
-class _LastActionsState extends State<LastActions> {
+  final bool groupByCategories;
+  final Filters filters;
+  late final List<PersistedPayment> _paymentList;
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: Database.getDatabase().getEntriesByPaymentMethod(widget.paymentMethod),
+        future: Database.getDatabase().getEntriesByPayMethod(paymentMethod),
         builder: (builder, snapshot) {
-          return snapshot.connectionState == ConnectionState.waiting
-              ? Center(child: CircularProgressIndicator())
-              : _renderLastActionsWidget(snapshot.data, context);
+          if (snapshot.connectionState == ConnectionState.waiting)
+            return Center(child: CircularProgressIndicator());
+
+          _paymentList = snapshot.data as List<PersistedPayment>;
+
+          return _renderLastActionsWidget(context, groupByCategories, filters);
         });
   }
 
-  Widget _renderLastActionsWidget(_paymentList, context) {
-    var actionsAmount = _paymentList?.length ?? 0;
+  Widget _renderLastActionsWidget(context, bool groupByCategories, Filters filters) {
+    if (_paymentList.length == 0) {
+      return Center(
+          child: Text(
+            'No actions saved',
+            style: TextStyle(fontSize: 40, color: Colors.pink),
+          ));
+    }
 
-    return actionsAmount == 0 ? Center(child: Text('Nothing to show')) :
-    Container(
+    if (filters != Filters.EMPTY_FILTER)
+      return _renderFiltered(_paymentList);
+    if (groupByCategories)
+      return _renderGrouped();
+    return _renderList();
+
+  }
+
+  Widget _renderGrouped() {
+    Map<String, double> groupedEntities = {};
+
+    _paymentList.forEach((element) {
+      double amountFromElement = double.parse(element.amount);
+      groupedEntities.update(
+          element.paymentType, (value) => value + amountFromElement,
+          ifAbsent: () => amountFromElement);
+    });
+
+    return Container(
       child: ListView.builder(
           shrinkWrap: true,
-          itemCount: actionsAmount,
+          itemCount: groupedEntities.keys.length,
           itemBuilder: (context, index) {
-            PersistedPayment currentElement = _paymentList!.elementAt(index);
-            return GestureDetector(
-              onDoubleTap: () async => {
-                await _deletePayment(currentElement.time),
-              },
+            return Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              elevation: 0,
+              color: Colors.transparent,
               child: Container(
                 decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(10))),
-                child: Card(
-                  color: Colors.green[200],
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: (Column(
-                      children: [
-                        Container(
-                          child: Text(currentElement.name.toString(),
-                              style: TextStyle(fontSize: 18)),
-                          alignment: Alignment.topLeft,
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                    gradient: LinearGradient(
+                        colors: [Colors.greenAccent, Colors.green])),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: (Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Text(groupedEntities.keys.elementAt(index).toString()
+                            .replaceAll("_", " "),
+                            style: TextStyle(fontSize: 25)),
+                      ),
+                      Flexible(
+                        child: Text(groupedEntities.values.elementAt(index).toString(),
+                            style: TextStyle(fontSize: 25, color: Colors.pink)
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(currentElement.paymentType.toString()),
-                            Text(currentElement.time.toString()),
-                            Text(double.parse(currentElement.amount).toStringAsFixed(2),
-                                style: TextStyle(
-                                    fontSize: 15,
-                                    color: double.parse(currentElement.amount) >= 0
-                                        ? Colors.green
-                                        : Colors.redAccent)),
-                          ],
-                        )
-                      ],
-                    )),
-                  ),
+                      )
+                    ],
+                  )),
                 ),
               ),
             );
           }),
     );
-
   }
 
-  Future<void>_deletePayment(String time) async {
-    await Database.getDatabase().deletePayment(time, widget.paymentMethod);
+  Widget _renderList() {
+    return Container(
+      child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: _paymentList.length,
+          itemBuilder: (context, index) {
+            PersistedPayment currentElement = _paymentList.elementAt(index);
+            return GestureDetector(
+                onDoubleTap: () async => await _deletePayment(currentElement),
+                child: SingleEntry(payment: currentElement));
+          }),
+    );
+  }
+
+  Future<void> _deletePayment(PersistedPayment payment) async {
+    await Database.getDatabase().deletePayment(payment);
     await Future.delayed(Duration(milliseconds: 10));
-    await widget.refreshFunction();
+    await refreshFunction();
   }
 }
-
-

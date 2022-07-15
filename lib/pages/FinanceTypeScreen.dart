@@ -1,9 +1,11 @@
 // ignore: import_of_legacy_library_into_null_safe
 
 import 'package:flutter/material.dart';
+import 'package:my_finances/model/PaymentType.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
-
+import 'package:my_finances/widgets/DropDownWithValues.dart';
 import '../dal/Database.dart';
+import '../model/Filters.dart';
 import '../widgets/LastActions.dart';
 import 'StepperInputScreenForFinance.dart';
 
@@ -19,6 +21,9 @@ class FinanceTypeScreen extends StatefulWidget {
 class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
   final amountController = TextEditingController();
   final nameController = TextEditingController();
+  bool _groupByCategories = false;
+  bool _filtered = false;
+  Filters filters = Filters.EMPTY_FILTER;
 
   double _amount = 00.0;
   String backgroundImage = '';
@@ -84,17 +89,53 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                                     new StepperInputScreenForFinance(
                                         widget.title)));
 
-                        if (createdPayment == null) {return;}
+                        if (createdPayment == null) {
+                          return;
+                        }
 
                         await refreshTotalAmount();
                       },
                       child: Icon(Icons.add))),
-              // onPressed: _saveNewPayment, child: Icon(Icons.add))),
               Expanded(
                   flex: 4,
                   child: LastActions(
                       paymentMethod: widget.title,
-                      refreshFunction: refreshTotalAmount))
+                      refreshFunction: refreshTotalAmount,
+                      groupByCategories: _groupByCategories,
+                      filters: filters
+                  )),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                      style: _buttonStyle(_groupByCategories),
+                      onPressed: () {
+                        setState(() {
+                          _groupByCategories = !_groupByCategories;
+                        });
+                      },
+                      child: Text("Group")),
+                  ElevatedButton(
+                      style: _buttonStyle(_filtered),
+                      onPressed: () async {
+                        // turn of the filters
+                        if (_filtered) {
+                          setState(() {
+                            _filtered = !_filtered;
+                          });
+                          return;
+                        }
+
+                        // if no filters show dialog with filters
+                        filters = await _showFiltersDialog();
+                        setState(() {
+                          if (filters != Filters.EMPTY_FILTER)
+                            _filtered = !_filtered;
+                        });
+                      },
+                      child: Text("Filters")),
+                ],
+              )
             ],
           ),
         ),
@@ -111,6 +152,139 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
     setState(() {
       this._amount = savedValue;
     });
+  }
 
+  ButtonStyle? _buttonStyle(bool condition) {
+    return condition
+        ? ElevatedButton.styleFrom(
+            shape: CircleBorder(),
+          )
+        : null;
+  }
+
+  Future<Filters> _showFiltersDialog() async {
+    var operationNameController = TextEditingController();
+    Filters selectedFilters = Filters.EMPTY_FILTER;
+
+    String selectedOperationType = PaymentType.EVENTS.name;
+
+    var currentYear = DateTime.now().year;
+    var currentMonth = DateTime.now().month;
+    var currentDay = DateTime.now().day;
+
+    DateTimeRange dateRange = DateTimeRange(
+        start: DateTime(currentYear, currentMonth, currentDay),
+        end: DateTime(currentYear, currentMonth, currentDay));
+
+    RangeValues amountsForSlider = await Database.getDatabase().getHighestAmount();
+    var selectedRange = RangeValues(amountsForSlider.start, amountsForSlider.end);
+    var rangeLabels = RangeLabels(selectedRange.start.toString(), selectedRange.end.toString());
+
+    await showDialog<Filters>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.lightBlue,
+              title: Text("Select filters"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Operation name'),
+                    TextField(controller: operationNameController),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(0,40,0,0),
+                      child: Text('Amount range'),
+                    ),
+                    RangeSlider(
+                      divisions: 10,
+                      min: amountsForSlider.start,
+                      max: amountsForSlider.end,
+                      labels: rangeLabels,
+                      values: selectedRange,
+                      onChanged: (RangeValues rv) {
+                        setState(() {
+                          selectedRange = rv;
+                          rangeLabels = RangeLabels(rv.start.toString(),
+                          rv.end.toString());
+                        });
+                      },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(0,40,0,0),
+                      child: Text('Date range'),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        ElevatedButton(
+                            onPressed: () async {
+                              DateTimeRange newDates = await pickDate(dateRange);
+                              setState(() {
+                                dateRange = newDates;
+                              });
+                            },
+                            child: Text(showDateOnButton(dateRange.start))),
+                        ElevatedButton(
+                            onPressed: () {
+                              pickDate(dateRange);
+                            },
+                            child: Text(showDateOnButton(dateRange.end)))
+                      ],
+                    ), // d
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(0,40,0,0),
+                      child: Text('Category'),
+                    ),
+                    DropDownWithValues(
+                        selectedOperationType: selectedOperationType,
+                        refreshParent: (String selected) {
+                          setState(() {
+                            selectedOperationType = selected;
+                          });
+                        }),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () async {
+                    selectedFilters = Filters(
+                        operationName: operationNameController.text,
+                        selectedRangeAmount: selectedRange,
+                        dateRange: dateRange,
+                        selectedOperationType: selectedOperationType
+                    );
+
+                    Navigator.pop(context,selectedFilters);
+
+                    return Future.value(selectedFilters);
+                  },
+                  child: Text("Ok", style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    return Future.value(selectedFilters);
+  }
+
+  String showDateOnButton(DateTime date) =>
+      '${date.year}/${date.month}/${date.day}';
+
+  Future pickDate(dateRange) async {
+    DateTimeRange? dateTimeRange = await showDateRangePicker(
+        context: context,
+        initialDateRange: dateRange,
+        firstDate: DateTime(DateTime.now().year),
+        lastDate: DateTime(DateTime.now().year + 1));
+
+    if (dateTimeRange == null) return;
+
+    return dateTimeRange;
   }
 }

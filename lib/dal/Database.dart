@@ -1,5 +1,6 @@
 import 'dart:async';
-
+import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:my_finances/model/PaymentType.dart';
 
@@ -17,8 +18,6 @@ class Database {
     }
     if (_cashAndCardAmount == null) {
       _cashAndCardAmount = Hive.box<double>('amounts');
-      _cashAndCardAmount!.put("Card", 1000.0);
-      _cashAndCardAmount!.put("Cash", 100.0);
     }
   }
 
@@ -36,12 +35,13 @@ class Database {
     double totalAmount = 0.0;
 
     var filteredList =
-        await this.getEntriesByPaymentMethod(payment.paymentMethod);
+        await this.getEntriesByPayMethod(payment.paymentMethod);
+
     filteredList.forEach((entry) {
       var entryAmount = double.parse(entry.amount);
-
-      totalAmount += entry.paymentType == "INCOME" ? 0 : entryAmount;
-
+      totalAmount = entry.paymentType == "INCOME"
+          ? 0
+          : entryAmount;
     });
 
     var currentAmount = this._cashAndCardAmount!.get(payment.paymentMethod);
@@ -50,8 +50,7 @@ class Database {
         .put(payment.paymentMethod, currentAmount! - totalAmount);
   }
 
-  Future<List<PersistedPayment>> getEntriesByPaymentMethod(
-      String paymentMethod) async {
+  Future<List<PersistedPayment>> getEntriesByPayMethod(String paymentMethod) async {
     return await _paymentsBox!.values
         .where((element) => element.paymentMethod == paymentMethod)
         .toList();
@@ -66,13 +65,25 @@ class Database {
     return totalAmount;
   }
 
-  Future<void> deletePayment(String time, String paymentMethod) async {
+  Future<RangeValues> getHighestAmount() async {
+    var high = await _paymentsBox!.values.
+        map((e) => double.parse(e.amount))
+        .reduce(max);
+
+    var small = await _paymentsBox!.values.
+    map((e) => double.parse(e.amount))
+        .reduce(min);
+
+    return RangeValues(small, high);
+  }
+
+  Future<void> deletePayment(PersistedPayment payment) async {
     _paymentsBox!.keys.forEach((key) async {
-      PersistedPayment? persistedPayment = _paymentsBox!.get(key);
-      if (isWanted(persistedPayment, time, paymentMethod)) {
+      PersistedPayment? currElement = _paymentsBox!.get(key);
+      if (_isWanted(currElement, payment)) {
         await _paymentsBox!.delete(key);
         await _cashAndCardAmount!.put(
-            paymentMethod, _calculateAmount(persistedPayment));
+            payment.paymentMethod, _calculateAmount(payment));
       }
     });
   }
@@ -126,9 +137,10 @@ class Database {
     await Hive.close();
   }
 
-  bool isWanted(PersistedPayment? payment, String time, String payMethod) =>
-      payment?.time == time &&
-      payment?.paymentMethod == payMethod;
+  bool _isWanted(PersistedPayment? current, PersistedPayment candidate) =>
+      current?.name == candidate.name &&
+      current?.time == candidate.time &&
+      current?.paymentMethod == candidate.paymentMethod;
 
 // todo: zrobić opcję wyciągania kabony z bankomatu - dodaje cash odejmuje z card
 }

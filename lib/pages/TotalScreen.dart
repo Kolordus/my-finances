@@ -180,7 +180,8 @@ class _TotalScreenState extends State<TotalScreen> {
                                         whatIsSelected,
                                         this.isSalary);
 
-                                    // todo: create reports
+                                    // todo: create reports in the future
+                                    // maybe in Spring Boot/Angular? To save them on the server avoid keeping too much unnecessary data
 
                                     Navigator.pop(context);
                                   },
