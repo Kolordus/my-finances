@@ -22,8 +22,8 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
   final amountController = TextEditingController();
   final nameController = TextEditingController();
   bool _groupByCategories = false;
-  bool _filtered = false;
-  Filters filters = Filters.EMPTY_FILTER;
+  bool _filterByCategories = false;
+  Filters _filters = Filters.EMPTY_FILTER;
 
   double _amount = 00.0;
   String backgroundImage = '';
@@ -102,7 +102,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                       paymentMethod: widget.title,
                       refreshFunction: refreshTotalAmount,
                       groupByCategories: _groupByCategories,
-                      filters: filters
+                      filters: _filters
                   )),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -116,22 +116,20 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                       },
                       child: Text("Group")),
                   ElevatedButton(
-                      style: _buttonStyle(_filtered),
+                      style: _buttonStyle(_filters != Filters.EMPTY_FILTER),
                       onPressed: () async {
                         // turn of the filters
-                        if (_filtered) {
+                        if (_filters != Filters.EMPTY_FILTER) {
                           setState(() {
-                            _filtered = !_filtered;
+                            _filters = Filters.EMPTY_FILTER;
+                            _filterByCategories = false;
                           });
                           return;
                         }
 
                         // if no filters show dialog with filters
-                        filters = await _showFiltersDialog();
-                        setState(() {
-                          if (filters != Filters.EMPTY_FILTER)
-                            _filtered = !_filtered;
-                        });
+                        _filters = await _showFiltersDialog();
+                        setState(() { });
                       },
                       child: Text("Filters")),
                 ],
@@ -166,7 +164,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
     var operationNameController = TextEditingController();
     Filters selectedFilters = Filters.EMPTY_FILTER;
 
-    String selectedOperationType = PaymentType.EVENTS.name;
+    String selectedOperationType = '';
 
     var currentYear = DateTime.now().year;
     var currentMonth = DateTime.now().month;
@@ -174,7 +172,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
 
     DateTimeRange dateRange = DateTimeRange(
         start: DateTime(currentYear, currentMonth, currentDay),
-        end: DateTime(currentYear, currentMonth, currentDay));
+        end: DateTime(currentYear, currentMonth, currentDay + 1));
 
     RangeValues amountsForSlider = await Database.getDatabase().getHighestAmount();
     var selectedRange = RangeValues(amountsForSlider.start, amountsForSlider.end);
@@ -238,13 +236,26 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                       padding: const EdgeInsets.fromLTRB(0,40,0,0),
                       child: Text('Category'),
                     ),
-                    DropDownWithValues(
+                    Checkbox(
+                      activeColor: Colors.white,
+                      checkColor: Colors.blue,
+                      value: _filterByCategories,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _filterByCategories = value!;
+                          selectedOperationType  = _filterByCategories
+                              ? PaymentType.OTHERS.name
+                              : "";
+                        });
+                      },
+                    ),
+                    _filterByCategories ? DropDownWithValues(
                         selectedOperationType: selectedOperationType,
                         refreshParent: (String selected) {
                           setState(() {
                             selectedOperationType = selected;
                           });
-                        }),
+                        }) : Text(''),
                   ],
                 ),
               ),

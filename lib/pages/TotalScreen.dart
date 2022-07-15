@@ -18,7 +18,7 @@ class _TotalScreenState extends State<TotalScreen> {
   String _total = '00.00';
 
   List<bool> isSelected = [false, false];
-  bool isSalary = true;
+  bool _isSalary = true;
   var addToBankAmountController = TextEditingController();
   final incomeNameController = TextEditingController();
 
@@ -155,16 +155,16 @@ class _TotalScreenState extends State<TotalScreen> {
                                       Checkbox(
                                         activeColor: Colors.white,
                                         checkColor: Colors.blue,
-                                        value: isSalary,
+                                        value: _isSalary,
                                         onChanged: (bool? value) {
                                           setState(() {
-                                            isSalary = value!;
+                                            _isSalary = value!;
                                           });
                                         },
                                       ),
                                     ],
                                   ),
-                                  isSalary ? Text("") : TextField(controller: incomeNameController),
+                                  _isSalary ? Text("") : TextField(controller: incomeNameController),
                                 ],
                               ),
                               actions: <Widget>[
@@ -178,7 +178,7 @@ class _TotalScreenState extends State<TotalScreen> {
                                         addToBankAmountController.text,
                                         incomeNameController.text,
                                         whatIsSelected,
-                                        this.isSalary);
+                                        this._isSalary);
 
                                     // todo: create reports in the future
                                     // maybe in Spring Boot/Angular? To save them on the server avoid keeping too much unnecessary data

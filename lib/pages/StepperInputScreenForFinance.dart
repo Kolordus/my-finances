@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_finances/dal/Database.dart';
@@ -63,8 +61,7 @@ class _StepperInputScreenForFinanceState
     var isFinalStep = _currentStep == stepList().length - 1;
 
     if (!isFinalStep) {
-      _currentStep < stepList().length - 1
-          ? setState(() => {_currentStep += 1})
+      _currentStep < stepList().length - 1 ? setState(() => {_currentStep += 1})
           : null;
       return;
     }

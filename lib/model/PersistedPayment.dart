@@ -30,9 +30,25 @@ class PersistedPayment {
 
   static String getDate() {
     DateTime date = DateTime.now();
+    String month = date.month < 10
+        ? '0' + date.month.toString()
+        : date.month.toString();
 
-    return "${date.year}-${date.month}-${date.day} ${date.hour}:${date.minute}";
+    String day = date.day < 10
+        ? '0' + date.day.toString()
+        : date.day.toString();
+
+    return "${date.year}-$month-$day ${date.hour}:${date.minute}";
   }
+
+  DateTime getDateAsDateTime() {
+    return DateTime.parse(this.time);
+  }
+
+  double getAmountAsDouble() {
+    return double.parse(this.amount);
+  }
+
 
   Map<String, Object?> toJson() => {
     'name': name,

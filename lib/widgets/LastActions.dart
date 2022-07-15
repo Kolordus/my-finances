@@ -45,7 +45,7 @@ class LastActions extends StatelessWidget {
     }
 
     if (filters != Filters.EMPTY_FILTER)
-      return _renderFiltered(_paymentList);
+      return _renderFiltered();
     if (groupByCategories)
       return _renderGrouped();
     return _renderList();
@@ -120,5 +120,22 @@ class LastActions extends StatelessWidget {
     await Database.getDatabase().deletePayment(payment);
     await Future.delayed(Duration(milliseconds: 10));
     await refreshFunction();
+  }
+
+  Widget _renderFiltered() {
+    List<PersistedPayment> filtersEntries = Database.getDatabase()
+        .getFiltersEntries(filters, paymentMethod);
+
+    return Container(
+      child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: filtersEntries.length,
+          itemBuilder: (context, index) {
+            PersistedPayment currentElement = filtersEntries.elementAt(index);
+            return GestureDetector(
+                onDoubleTap: () async => await _deletePayment(currentElement),
+                child: SingleEntry(payment: currentElement));
+          }),
+    );
   }
 }

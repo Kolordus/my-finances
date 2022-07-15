@@ -1,13 +1,11 @@
 
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../model/PaymentType.dart';
 
 class DropDownWithValues extends StatelessWidget {
 
-  String selectedOperationType;
-  Function refreshParent;
+  final String selectedOperationType;
+  final Function refreshParent;
 
   DropDownWithValues({required this.selectedOperationType, required this.refreshParent});
 

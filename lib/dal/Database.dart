@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:my_finances/model/Filters.dart';
 import 'package:my_finances/model/PaymentType.dart';
 
 import '../model/PersistedPayment.dart';
@@ -22,10 +23,6 @@ class Database {
   }
 
   static Database getDatabase() {
-    if (_instance == null) {
-      _instance = Database();
-    }
-
     return _instance;
   }
 
@@ -51,8 +48,21 @@ class Database {
   }
 
   Future<List<PersistedPayment>> getEntriesByPayMethod(String paymentMethod) async {
-    return await _paymentsBox!.values
+    return _paymentsBox!.values
         .where((element) => element.paymentMethod == paymentMethod)
+        .toList();
+  }
+
+  List<PersistedPayment> getFiltersEntries(Filters filters, String paymentMethod) {
+    return _paymentsBox!.values
+        .where((element) => element.paymentMethod == paymentMethod)
+        .where((element) =>
+          element.getDateAsDateTime().isAfter(filters.dateRange.start) &&
+          element.getDateAsDateTime().isBefore(filters.dateRange.end)
+        )
+        .where((element) => _isInRange(element.getAmountAsDouble(), filters.selectedRangeAmount))
+        .where((element) => element.name.contains(filters.operationName))
+        .where((element) => element.paymentType.contains(filters.selectedOperationType))
         .toList();
   }
 
@@ -66,11 +76,11 @@ class Database {
   }
 
   Future<RangeValues> getHighestAmount() async {
-    var high = await _paymentsBox!.values.
+    var high = _paymentsBox!.values.
         map((e) => double.parse(e.amount))
         .reduce(max);
 
-    var small = await _paymentsBox!.values.
+    var small = _paymentsBox!.values.
     map((e) => double.parse(e.amount))
         .reduce(min);
 
@@ -141,6 +151,10 @@ class Database {
       current?.name == candidate.name &&
       current?.time == candidate.time &&
       current?.paymentMethod == candidate.paymentMethod;
+
+  bool _isInRange(double amount, RangeValues values) {
+    return amount >= values.start && amount <= values.end;
+  }
 
 // todo: zrobić opcję wyciągania kabony z bankomatu - dodaje cash odejmuje z card
 }
