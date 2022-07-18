@@ -76,6 +76,9 @@ class Database {
   }
 
   Future<RangeValues> getHighestAmount() async {
+    if (_paymentsBox!.isEmpty)
+      return RangeValues(0, 0);
+
     var high = _paymentsBox!.values.
         map((e) => double.parse(e.amount))
         .reduce(max);
@@ -136,7 +139,11 @@ class Database {
 
   getSavedCashOrCard(String paymentMethod) {
     double? previousAmount = _cashAndCardAmount!.get(paymentMethod);
-    return previousAmount!;
+    if (previousAmount == null) {
+      _cashAndCardAmount!.put(paymentMethod, 0);
+      previousAmount = 0;
+    }
+    return previousAmount;
   }
 
   clearEntries() async {
