@@ -48,13 +48,16 @@ class Database {
   }
 
   Future<List<PersistedPayment>> getEntriesByPayMethod(String paymentMethod) async {
-    return _paymentsBox!.values
+    List<PersistedPayment> list = _paymentsBox!.values
         .where((element) => element.paymentMethod == paymentMethod)
         .toList();
+
+    list.sort((a, b) => a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 1 : 0);
+    return list;
   }
 
   List<PersistedPayment> getFiltersEntries(Filters filters, String paymentMethod) {
-    return _paymentsBox!.values
+    List<PersistedPayment> list = _paymentsBox!.values
         .where((element) => element.paymentMethod == paymentMethod)
         .where((element) =>
           element.getDateAsDateTime().isAfter(filters.dateRange.start) &&
@@ -64,6 +67,9 @@ class Database {
         .where((element) => element.name.contains(filters.operationName))
         .where((element) => element.paymentType.contains(filters.selectedOperationType))
         .toList();
+
+    list.sort((a, b) => a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 1 : 0);
+    return list;
   }
 
   getSumOfEntries(List<PersistedPayment> list) {
