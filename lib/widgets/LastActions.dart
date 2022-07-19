@@ -12,13 +12,15 @@ class LastActions extends StatelessWidget {
       required this.paymentMethod,
       required this.refreshFunction,
       required this.groupByCategories,
-      required this.filters})
+      required this.filters,
+      required this.sortedDesc})
       : super(key: key);
 
   final String paymentMethod;
   final Function refreshFunction;
   final bool groupByCategories;
   final Filters filters;
+  final bool sortedDesc;
   late final List<PersistedPayment> _paymentList;
 
   @override
@@ -30,6 +32,10 @@ class LastActions extends StatelessWidget {
             return Center(child: CircularProgressIndicator());
 
           _paymentList = snapshot.data as List<PersistedPayment>;
+
+          if (sortedDesc) {
+            _paymentList.sort((a, b) => a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 0 : 1);
+          }
 
           return _renderLastActionsWidget(context, groupByCategories, filters);
         });
@@ -123,8 +129,7 @@ class LastActions extends StatelessWidget {
   }
 
   Widget _renderFiltered() {
-    List<PersistedPayment> filtersEntries = Database.getDatabase()
-        .getFiltersEntries(filters, paymentMethod);
+    List<PersistedPayment> filtersEntries = _filterEntries(filters, paymentMethod);
 
     return Container(
       child: ListView.builder(
@@ -137,5 +142,25 @@ class LastActions extends StatelessWidget {
                 child: SingleEntry(payment: currentElement));
           }),
     );
+  }
+
+  List<PersistedPayment> _filterEntries(Filters filters, String paymentMethod) {
+    List<PersistedPayment> list = _paymentList
+        .where((element) => element.paymentMethod == paymentMethod)
+        .where((element) =>
+    element.getDateAsDateTime().isAfter(filters.dateRange.start) &&
+        element.getDateAsDateTime().isBefore(filters.dateRange.end)
+    )
+        .where((element) => _isInRange(element.getAmountAsDouble(), filters.selectedRangeAmount))
+        .where((element) => element.name.contains(filters.operationName))
+        .where((element) => element.paymentType.contains(filters.selectedOperationType))
+        .toList();
+
+    list.sort((a, b) => a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 1 : 0);
+    return list;
+  }
+
+  bool _isInRange(double amount, RangeValues values) {
+    return amount >= values.start && amount <= values.end;
   }
 }

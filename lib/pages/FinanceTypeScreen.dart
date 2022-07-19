@@ -24,6 +24,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
   bool _groupByCategories = false;
   bool _filterByCategories = false;
   Filters _filters = Filters.EMPTY_FILTER;
+  bool _sortDesc = false;
 
   double _amount = 00.0;
   String backgroundImage = '';
@@ -102,7 +103,8 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                       paymentMethod: widget.title,
                       refreshFunction: refreshTotalAmount,
                       groupByCategories: _groupByCategories,
-                      filters: _filters
+                      filters: _filters,
+                      sortedDesc: _sortDesc
                   )),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -115,6 +117,14 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                         });
                       },
                       child: Text("Group")),
+                  ElevatedButton(
+                      style: _buttonStyle(_groupByCategories),
+                      onPressed: () {
+                        setState(() {
+                          _sortDesc = !_sortDesc;
+                        });
+                      },
+                      child: Icon(Icons.compare_arrows_sharp)),
                   ElevatedButton(
                       style: _buttonStyle(_filters != Filters.EMPTY_FILTER),
                       onPressed: () async {

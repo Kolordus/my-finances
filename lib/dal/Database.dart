@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:my_finances/model/Filters.dart';
 import 'package:my_finances/model/PaymentType.dart';
 
 import '../model/PersistedPayment.dart';
@@ -50,22 +49,6 @@ class Database {
   Future<List<PersistedPayment>> getEntriesByPayMethod(String paymentMethod) async {
     List<PersistedPayment> list = _paymentsBox!.values
         .where((element) => element.paymentMethod == paymentMethod)
-        .toList();
-
-    list.sort((a, b) => a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 1 : 0);
-    return list;
-  }
-
-  List<PersistedPayment> getFiltersEntries(Filters filters, String paymentMethod) {
-    List<PersistedPayment> list = _paymentsBox!.values
-        .where((element) => element.paymentMethod == paymentMethod)
-        .where((element) =>
-          element.getDateAsDateTime().isAfter(filters.dateRange.start) &&
-          element.getDateAsDateTime().isBefore(filters.dateRange.end)
-        )
-        .where((element) => _isInRange(element.getAmountAsDouble(), filters.selectedRangeAmount))
-        .where((element) => element.name.contains(filters.operationName))
-        .where((element) => element.paymentType.contains(filters.selectedOperationType))
         .toList();
 
     list.sort((a, b) => a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 1 : 0);
@@ -164,10 +147,6 @@ class Database {
       current?.name == candidate.name &&
       current?.time == candidate.time &&
       current?.paymentMethod == candidate.paymentMethod;
-
-  bool _isInRange(double amount, RangeValues values) {
-    return amount >= values.start && amount <= values.end;
-  }
 
 // todo: zrobić opcję wyciągania kabony z bankomatu - dodaje cash odejmuje z card
 }
