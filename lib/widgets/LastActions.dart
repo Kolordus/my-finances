@@ -34,28 +34,27 @@ class LastActions extends StatelessWidget {
           _paymentList = snapshot.data as List<PersistedPayment>;
 
           if (sortedDesc) {
-            _paymentList.sort((a, b) => a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 0 : 1);
+            _paymentList.sort((a, b) =>
+                a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 0 : 1);
           }
 
           return _renderLastActionsWidget(context, groupByCategories, filters);
         });
   }
 
-  Widget _renderLastActionsWidget(context, bool groupByCategories, Filters filters) {
+  Widget _renderLastActionsWidget(
+      context, bool groupByCategories, Filters filters) {
     if (_paymentList.length == 0) {
       return Center(
           child: Text(
-            'No actions saved',
-            style: TextStyle(fontSize: 40, color: Colors.pink),
-          ));
+        'No actions saved',
+        style: TextStyle(fontSize: 40, color: Colors.pink),
+      ));
     }
 
-    if (filters != Filters.EMPTY_FILTER)
-      return _renderFiltered();
-    if (groupByCategories)
-      return _renderGrouped();
+    if (filters != Filters.EMPTY_FILTER) return _renderFiltered();
+    if (groupByCategories) return _renderGrouped();
     return _renderList();
-
   }
 
   Widget _renderGrouped() {
@@ -90,14 +89,17 @@ class LastActions extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Flexible(
-                        child: Text(groupedEntities.keys.elementAt(index).toString()
-                            .replaceAll("_", " "),
+                        child: Text(
+                            groupedEntities.keys
+                                .elementAt(index)
+                                .toString()
+                                .replaceAll("_", " "),
                             style: TextStyle(fontSize: 25)),
                       ),
                       Flexible(
-                        child: Text(groupedEntities.values.elementAt(index).toString(),
-                            style: TextStyle(fontSize: 25, color: Colors.pink)
-                        ),
+                        child: Text(
+                            groupedEntities.values.elementAt(index).toString(),
+                            style: TextStyle(fontSize: 25, color: Colors.pink)),
                       )
                     ],
                   )),
@@ -129,7 +131,8 @@ class LastActions extends StatelessWidget {
   }
 
   Widget _renderFiltered() {
-    List<PersistedPayment> filtersEntries = _filterEntries(filters, paymentMethod);
+    List<PersistedPayment> filtersEntries =
+        _filterEntries(filters, paymentMethod);
 
     return Container(
       child: ListView.builder(
@@ -148,15 +151,17 @@ class LastActions extends StatelessWidget {
     List<PersistedPayment> list = _paymentList
         .where((element) => element.paymentMethod == paymentMethod)
         .where((element) =>
-    element.getDateAsDateTime().isAfter(filters.dateRange.start) &&
-        element.getDateAsDateTime().isBefore(filters.dateRange.end)
-    )
-        .where((element) => _isInRange(element.getAmountAsDouble(), filters.selectedRangeAmount))
+            element.getDateAsDateTime().isAfter(filters.dateRange.start) &&
+            element.getDateAsDateTime().isBefore(filters.dateRange.end))
+        .where((element) => _isInRange(
+            element.getAmountAsDouble(), filters.selectedRangeAmount))
         .where((element) => element.name.contains(filters.operationName))
-        .where((element) => element.paymentType.contains(filters.selectedOperationType))
+        .where((element) =>
+            element.paymentType.contains(filters.selectedOperationType))
         .toList();
 
-    list.sort((a, b) => a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 1 : 0);
+    list.sort((a, b) =>
+        a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 1 : 0);
     return list;
   }
 

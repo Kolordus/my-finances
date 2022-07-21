@@ -28,22 +28,17 @@ class Database {
   Future<void> savePayment(PersistedPayment payment) async {
     await _paymentsBox!.add(payment);
 
-    double totalAmount = 0.0;
-
-    var filteredList =
-        await this.getEntriesByPayMethod(payment.paymentMethod);
-
-    filteredList.forEach((entry) {
-      var entryAmount = double.parse(entry.amount);
-      totalAmount = entry.paymentType == "INCOME"
-          ? 0
-          : entryAmount;
-    });
+    double toSave = double.parse(payment.amount);
 
     var currentAmount = this._cashAndCardAmount!.get(payment.paymentMethod);
+    if (payment.paymentType == "INCOME") {
+      currentAmount = currentAmount!;
+    }
+    else {
+      currentAmount = currentAmount! - toSave;
+    }
 
-    _cashAndCardAmount!
-        .put(payment.paymentMethod, currentAmount! - totalAmount);
+    _cashAndCardAmount!.put(payment.paymentMethod, currentAmount);
   }
 
   Future<List<PersistedPayment>> getEntriesByPayMethod(String paymentMethod) async {
@@ -132,7 +127,7 @@ class Database {
       _cashAndCardAmount!.put(paymentMethod, 0);
       previousAmount = 0;
     }
-    return previousAmount;
+    return previousAmount.toDouble();
   }
 
   clearEntries() async {

@@ -182,7 +182,8 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
 
     DateTimeRange dateRange = DateTimeRange(
         start: DateTime(currentYear, currentMonth, currentDay),
-        end: DateTime(currentYear, currentMonth, currentDay + 1));
+        end: DateTime(currentYear, currentMonth, currentDay + 1)
+    );
 
     RangeValues amountsForSlider = await Database.getDatabase().getHighestAmount();
     var selectedRange = RangeValues(amountsForSlider.start, amountsForSlider.end);

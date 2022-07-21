@@ -31,12 +31,12 @@ class _TotalScreenState extends State<TotalScreen> {
   }
 
   Future<void> getAmountsForBoth() async {
-    var card = await Database.getDatabase().getSavedCashOrCard("Card");
-    var cash = await Database.getDatabase().getSavedCashOrCard("Cash");
+    double card = await Database.getDatabase().getSavedCashOrCard("Card");
+    double cash = await Database.getDatabase().getSavedCashOrCard("Cash");
 
-    this._card = card.toString();
-    this._cash = cash.toString();
-    this._total = (card + cash).toString();
+    _card = card.toStringAsFixed(2);
+    _cash = cash.toStringAsFixed(2);
+    this._total = (card+cash).toDouble().toStringAsFixed(2);
   }
 
   @override
