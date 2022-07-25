@@ -67,46 +67,70 @@ class LastActions extends StatelessWidget {
           ifAbsent: () => amountFromElement);
     });
 
-    return Container(
-      child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: groupedEntities.keys.length,
-          itemBuilder: (context, index) {
-            return Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              elevation: 0,
-              color: Colors.transparent,
-              child: Container(
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                    gradient: LinearGradient(
-                        colors: [Colors.greenAccent, Colors.green])),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: (Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Text(
-                            groupedEntities.keys
-                                .elementAt(index)
-                                .toString()
-                                .replaceAll("_", " "),
-                            style: TextStyle(fontSize: 25)),
-                      ),
-                      Flexible(
-                        child: Text(
-                            groupedEntities.values.elementAt(index).toString(),
-                            style: TextStyle(fontSize: 25, color: Colors.pink)),
-                      )
-                    ],
-                  )),
-                ),
-              ),
-            );
-          }),
+    
+    double _totalExpensesAmount = groupedEntities.values.fold(0, (p, c) => p + c);
+    
+    return Column(
+      children: [
+        Flexible(child: _totalExpensesWidget(_totalExpensesAmount), flex: 1,),
+        Flexible(
+          flex: 10,
+          child: ListView.builder(
+              padding: const EdgeInsets.all(0),
+              shrinkWrap: true,
+              itemCount: groupedEntities.keys.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
+                  ),
+                  elevation: 0,
+                  color: Colors.transparent,
+                  child: Container(
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(20)),
+                        gradient: LinearGradient(
+                            colors: [Colors.greenAccent, Colors.green])),
+                    child: Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: (Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Text(
+                                groupedEntities.keys
+                                    .elementAt(index)
+                                    .toString()
+                                    .replaceAll("_", " "),
+                                style: TextStyle(fontSize: 25)),
+                          ),
+                          Flexible(
+                            child: Text(
+                                groupedEntities.values.elementAt(index).toString(),
+                                style: TextStyle(fontSize: 25, color: Colors.pink)),
+                          )
+                        ],
+                      )),
+                    ),
+                  ),
+                );
+              }),
+        ),
+      ],
+    );
+  }
+
+  Widget _totalExpensesWidget(double _totalExpensesAmount) {
+    return Padding(
+      padding: const EdgeInsets.all(0.0),
+      child: Column(
+        children: [
+          Text("TOTAL EXPENSES",
+              style: TextStyle(fontSize: 15, color: Colors.deepOrangeAccent)),
+          Text(_totalExpensesAmount.toStringAsFixed(2),
+              style: TextStyle(fontSize: 20, color: Colors.deepOrangeAccent))
+        ],
+      ),
     );
   }
 
@@ -115,6 +139,7 @@ class LastActions extends StatelessWidget {
       child: ListView.builder(
           shrinkWrap: true,
           itemCount: _paymentList.length,
+          padding: const EdgeInsets.all(0),
           itemBuilder: (context, index) {
             PersistedPayment currentElement = _paymentList.elementAt(index);
             return GestureDetector(
@@ -138,6 +163,7 @@ class LastActions extends StatelessWidget {
       child: ListView.builder(
           shrinkWrap: true,
           itemCount: filtersEntries.length,
+          padding: const EdgeInsets.all(0),
           itemBuilder: (context, index) {
             PersistedPayment currentElement = filtersEntries.elementAt(index);
             return GestureDetector(

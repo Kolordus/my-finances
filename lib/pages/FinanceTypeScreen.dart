@@ -118,7 +118,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                       },
                       child: Text("Group")),
                   ElevatedButton(
-                      style: _buttonStyle(_groupByCategories),
+                      style: _buttonStyle(false),
                       onPressed: () {
                         setState(() {
                           _sortDesc = !_sortDesc;
