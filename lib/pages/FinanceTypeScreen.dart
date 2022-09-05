@@ -155,7 +155,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
     Database db = Database.getDatabase();
     String paymentMethod = widget.title;
 
-    double savedValue = await db.getSavedCashOrCard(paymentMethod);
+    double savedValue = await db.getSumForMethod(paymentMethod);
 
     setState(() {
       this._amount = savedValue;
