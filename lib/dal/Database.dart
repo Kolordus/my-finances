@@ -59,7 +59,7 @@ class Database {
     return totalAmount;
   }
 
-  Future<RangeValues> getHighestAmount() async {
+  Future<RangeValues> getHighestAndLowestAmount() async {
     if (_paymentsBox!.isEmpty)
       return RangeValues(0, 0);
 
@@ -142,6 +142,10 @@ class Database {
       current?.name == candidate.name &&
       current?.time == candidate.time &&
       current?.paymentMethod == candidate.paymentMethod;
+
+  List<PersistedPayment>? getAllEntries() {
+    return _paymentsBox?.values.toList();
+  }
 
 // todo: zrobić opcję wyciągania kabony z bankomatu - dodaje cash odejmuje z card
 }

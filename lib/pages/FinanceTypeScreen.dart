@@ -118,7 +118,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                       },
                       child: Text("Group")),
                   ElevatedButton(
-                      style: _buttonStyle(false),
+                      style: _buttonStyle(_sortDesc),
                       onPressed: () {
                         setState(() {
                           _sortDesc = !_sortDesc;
@@ -185,7 +185,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
         end: DateTime(currentYear, currentMonth, currentDay + 1)
     );
 
-    RangeValues amountsForSlider = await Database.getDatabase().getHighestAmount();
+    RangeValues amountsForSlider = await Database.getDatabase().getHighestAndLowestAmount();
     var selectedRange = RangeValues(amountsForSlider.start, amountsForSlider.end);
     var rangeLabels = RangeLabels(selectedRange.start.toString(), selectedRange.end.toString());
 

@@ -72,9 +72,9 @@ class LastActions extends StatelessWidget {
     
     return Column(
       children: [
-        Flexible(child: _totalExpensesWidget(_totalExpensesAmount), flex: 1,),
+        Flexible(child: _totalExpensesWidget(_totalExpensesAmount), flex: 3,),
         Flexible(
-          flex: 10,
+          flex: 20,
           child: ListView.builder(
               padding: const EdgeInsets.all(0),
               shrinkWrap: true,

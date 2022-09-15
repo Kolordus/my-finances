@@ -89,116 +89,108 @@ class _TotalScreenState extends State<TotalScreen> {
                     children: [
                       Text(_total,
                           style:
-                              getTextStyle(Colors.yellowAccent, fontSize: 70)),
+                              getTextStyle(Colors.yellowAccent, fontSize: 65)),
                     ],
                   ),
                 ],
               )),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                  onPressed: () async {
-                    await showDialog(
-                      context: context,
-                      builder: (context) {
-                        return StatefulBuilder(
-                          builder: (context, setState) {
-                            return AlertDialog(
-                              backgroundColor: Colors.lightBlue,
-                              title: Text("New Income"),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
+          ElevatedButton(
+              onPressed: () async {
+                await showDialog(
+                  context: context,
+                  builder: (context) {
+                    return StatefulBuilder(
+                      builder: (context, setState) {
+                        return AlertDialog(
+                          backgroundColor: Colors.lightBlue,
+                          title: Text("New Income"),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: TextField(
+                                  controller: addToBankAmountController,
+                                  style: TextStyle(color: Colors.white),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter(
+                                        RegExp(r'^\d*\.?\d*'),
+                                        allow: true)
+                                  ],
+                                  decoration: InputDecoration(
+                                      prefixIcon: Icon(Icons.add),
+                                      iconColor: Colors.white,
+                                      prefixIconColor: Colors.red),
+                                ),
+                              ),
+                              ToggleButtons(
+                                disabledBorderColor: Colors.blue,
+                                fillColor: Colors.white,
+                                children: <Widget>[
+                                  Icon(Icons.credit_card),
+                                  Icon(Icons.money),
+                                ],
+                                onPressed: (int index) {
+                                  setState(() {
+                                    for (int buttonIndex = 0;
+                                        buttonIndex < isSelected.length;
+                                        buttonIndex++) {
+                                      if (buttonIndex == index) {
+                                        isSelected[buttonIndex] = true;
+                                      } else {
+                                        isSelected[buttonIndex] = false;
+                                      }
+                                    }
+                                  });
+                                },
+                                isSelected: isSelected,
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: TextField(
-                                      controller: addToBankAmountController,
-                                      style: TextStyle(color: Colors.white),
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter(
-                                            RegExp(r'^\d*\.?\d*'),
-                                            allow: true)
-                                      ],
-                                      decoration: InputDecoration(
-                                          prefixIcon: Icon(Icons.add),
-                                          iconColor: Colors.white,
-                                          prefixIconColor: Colors.red),
-                                    ),
-                                  ),
-                                  ToggleButtons(
-                                    disabledBorderColor: Colors.blue,
-                                    fillColor: Colors.white,
-                                    children: <Widget>[
-                                      Icon(Icons.credit_card),
-                                      Icon(Icons.money),
-                                    ],
-                                    onPressed: (int index) {
+                                  Text('Salary'),
+                                  Checkbox(
+                                    activeColor: Colors.white,
+                                    checkColor: Colors.blue,
+                                    value: _isSalary,
+                                    onChanged: (bool? value) {
                                       setState(() {
-                                        for (int buttonIndex = 0;
-                                            buttonIndex < isSelected.length;
-                                            buttonIndex++) {
-                                          if (buttonIndex == index) {
-                                            isSelected[buttonIndex] = true;
-                                          } else {
-                                            isSelected[buttonIndex] = false;
-                                          }
-                                        }
+                                        _isSalary = value!;
                                       });
                                     },
-                                    isSelected: isSelected,
                                   ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text('Salary'),
-                                      Checkbox(
-                                        activeColor: Colors.white,
-                                        checkColor: Colors.blue,
-                                        value: _isSalary,
-                                        onChanged: (bool? value) {
-                                          setState(() {
-                                            _isSalary = value!;
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  _isSalary ? Text("") : TextField(controller: incomeNameController),
                                 ],
                               ),
-                              actions: <Widget>[
-                                TextButton(
-                                  onPressed: () async {
-                                    String whatIsSelected =
-                                        this.isSelected.elementAt(0)
-                                            ? "Card"
-                                            : "Cash";
-                                    await Database.getDatabase().addNewIncomeToBank(
-                                        addToBankAmountController.text,
-                                        incomeNameController.text,
-                                        whatIsSelected,
-                                        this._isSalary);
-
-                                    // todo: create reports in the future
-                                    // maybe in Spring Boot/Angular? To save them on the server avoid keeping too much unnecessary data
-
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text("Ok",
-                                      style: TextStyle(color: Colors.white)),
-                                ),
-                              ],
-                            );
-                          },
+                              _isSalary ? Text("") : TextField(controller: incomeNameController),
+                            ],
+                          ),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () async {
+                                String whatIsSelected =
+                                    this.isSelected.elementAt(0)
+                                        ? "Card"
+                                        : "Cash";
+                                await Database.getDatabase().addNewIncomeToBank(
+                                    addToBankAmountController.text,
+                                    incomeNameController.text,
+                                    whatIsSelected,
+                                    this._isSalary);
+                                Navigator.pop(context);
+                              },
+                              child: Text("Ok",
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
                         );
                       },
                     );
-                    setState(() {});
                   },
-                  child: Text('new income',
-                      style: getTextStyle(Colors.white, fontSize: 20))),
-            ],
+                );
+                setState(() {});
+              },
+              child: Text('new income',
+                  style: getTextStyle(Colors.white, fontSize: 20))
           ),
         ],
       ),
