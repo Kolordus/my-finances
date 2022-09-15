@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:my_finances/model/PersistedPayment.dart';
 
 import '../dal/Database.dart';
 
@@ -31,12 +34,12 @@ class _TotalScreenState extends State<TotalScreen> {
   }
 
   Future<void> getAmountsForBoth() async {
-    double card = await Database.getDatabase().getSavedCashOrCard("Card");
-    double cash = await Database.getDatabase().getSavedCashOrCard("Cash");
+    double card = await Database.getDatabase().getSumForMethod("Card");
+    double cash = await Database.getDatabase().getSumForMethod("Cash");
 
     _card = card.toStringAsFixed(2);
     _cash = cash.toStringAsFixed(2);
-    this._total = (card+cash).toDouble().toStringAsFixed(2);
+    this._total = (card + cash).toDouble().toStringAsFixed(2);
   }
 
   @override
@@ -60,11 +63,11 @@ class _TotalScreenState extends State<TotalScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Flexible(
-              flex: 1,
+              flex: 2,
               child: Text(widget.title.toUpperCase(),
                   style: getTextStyle(Colors.pink))),
           Flexible(
-              flex: 1,
+            flex: 4,
               child: Column(
                 children: [
                   Row(
@@ -89,111 +92,210 @@ class _TotalScreenState extends State<TotalScreen> {
                     children: [
                       Text(_total,
                           style:
-                              getTextStyle(Colors.yellowAccent, fontSize: 65)),
+                              getTextStyle(Colors.yellowAccent, fontSize: 70)),
                     ],
                   ),
                 ],
               )),
-          ElevatedButton(
-              onPressed: () async {
-                await showDialog(
-                  context: context,
-                  builder: (context) {
-                    return StatefulBuilder(
-                      builder: (context, setState) {
-                        return AlertDialog(
-                          backgroundColor: Colors.lightBlue,
-                          title: Text("New Income"),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: TextField(
-                                  controller: addToBankAmountController,
-                                  style: TextStyle(color: Colors.white),
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter(
-                                        RegExp(r'^\d*\.?\d*'),
-                                        allow: true)
+          Flexible(
+            flex: 1,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                    onPressed: () async {
+                      await showDialog(
+                        context: context,
+                        builder: (context) {
+                          return StatefulBuilder(
+                            builder: (context, setState) {
+                              return AlertDialog(
+                                backgroundColor: Colors.lightBlue,
+                                title: Text("New Income"),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: TextField(
+                                        controller: addToBankAmountController,
+                                        style: TextStyle(color: Colors.white),
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter(
+                                              RegExp(r'^\d*\.?\d*'),
+                                              allow: true)
+                                        ],
+                                        decoration: InputDecoration(
+                                            prefixIcon: Icon(Icons.add),
+                                            iconColor: Colors.white,
+                                            prefixIconColor: Colors.red),
+                                      ),
+                                    ),
+                                    ToggleButtons(
+                                      disabledBorderColor: Colors.blue,
+                                      fillColor: Colors.white,
+                                      children: <Widget>[
+                                        Icon(Icons.credit_card),
+                                        Icon(Icons.money),
+                                      ],
+                                      onPressed: (int index) {
+                                        setState(() {
+                                          for (int buttonIndex = 0;
+                                              buttonIndex < isSelected.length;
+                                              buttonIndex++) {
+                                            if (buttonIndex == index) {
+                                              isSelected[buttonIndex] = true;
+                                            } else {
+                                              isSelected[buttonIndex] = false;
+                                            }
+                                          }
+                                        });
+                                      },
+                                      isSelected: isSelected,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text('Salary'),
+                                        Checkbox(
+                                          activeColor: Colors.white,
+                                          checkColor: Colors.blue,
+                                          value: _isSalary,
+                                          onChanged: (bool? value) {
+                                            setState(() {
+                                              _isSalary = value!;
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    _isSalary
+                                        ? Text("")
+                                        : TextField(
+                                            controller: incomeNameController),
                                   ],
-                                  decoration: InputDecoration(
-                                      prefixIcon: Icon(Icons.add),
-                                      iconColor: Colors.white,
-                                      prefixIconColor: Colors.red),
                                 ),
-                              ),
-                              ToggleButtons(
-                                disabledBorderColor: Colors.blue,
-                                fillColor: Colors.white,
-                                children: <Widget>[
-                                  Icon(Icons.credit_card),
-                                  Icon(Icons.money),
-                                ],
-                                onPressed: (int index) {
-                                  setState(() {
-                                    for (int buttonIndex = 0;
-                                        buttonIndex < isSelected.length;
-                                        buttonIndex++) {
-                                      if (buttonIndex == index) {
-                                        isSelected[buttonIndex] = true;
-                                      } else {
-                                        isSelected[buttonIndex] = false;
-                                      }
-                                    }
-                                  });
-                                },
-                                isSelected: isSelected,
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text('Salary'),
-                                  Checkbox(
-                                    activeColor: Colors.white,
-                                    checkColor: Colors.blue,
-                                    value: _isSalary,
-                                    onChanged: (bool? value) {
-                                      setState(() {
-                                        _isSalary = value!;
-                                      });
+                                actions: <Widget>[
+                                  TextButton(
+                                    onPressed: () async {
+                                      String whatIsSelected =
+                                          this.isSelected.elementAt(0)
+                                              ? "Card"
+                                              : "Cash";
+                                      await Database.getDatabase()
+                                          .addNewIncomeToBank(
+                                              addToBankAmountController.text,
+                                              incomeNameController.text,
+                                              whatIsSelected,
+                                              this._isSalary);
+                                      Navigator.pop(context);
                                     },
+                                    child: Text("Ok",
+                                        style: TextStyle(color: Colors.white)),
                                   ),
                                 ],
-                              ),
-                              _isSalary ? Text("") : TextField(controller: incomeNameController),
-                            ],
-                          ),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () async {
-                                String whatIsSelected =
-                                    this.isSelected.elementAt(0)
-                                        ? "Card"
-                                        : "Cash";
-                                await Database.getDatabase().addNewIncomeToBank(
-                                    addToBankAmountController.text,
-                                    incomeNameController.text,
-                                    whatIsSelected,
-                                    this._isSalary);
-                                Navigator.pop(context);
-                              },
-                              child: Text("Ok",
-                                  style: TextStyle(color: Colors.white)),
-                            ),
-                          ],
-                        );
-                      },
-                    );
+                              );
+                            },
+                          );
+                        },
+                      );
+                      setState(() {});
+                    },
+                    child: Text('new income',
+                        style: getTextStyle(Colors.white, fontSize: 20))),
+              ],
+            ),
+          ),
+          Flexible(
+            flex: 1,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(onPressed: () {
+                    _exportData();
                   },
-                );
-                setState(() {});
+                  child: Text('Export data'),),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(onPressed: () {
+                    _importData();
+                  },
+                    child: Text('Import data'),),
+                ),
+
+              ],
+            ),
+          ),
+          Flexible(
+            flex: 1,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(onPressed: () {
+                _clearAll();
               },
-              child: Text('new income',
-                  style: getTextStyle(Colors.white, fontSize: 20))
+                child: Text('Clear All data'),),
+            ),
           ),
         ],
       ),
     );
   }
+
+  void _exportData() async {
+    var card = await Database.getDatabase().getEntriesByPayMethod('Card');
+    var cash = await Database.getDatabase().getEntriesByPayMethod('Cash');
+
+    final cardResponse = await http.post(
+      Uri.parse('http://10.0.2.2:8080/'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(card),
+    );
+
+    final cashResponse = await http.post(
+      Uri.parse('http://10.0.2.2:8080/'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(cash),
+    );
+  }
+
+  void _importData() async {
+    await Database.getDatabase().clearEntries();
+
+    final response = await http.get(
+      Uri.parse('http://10.0.2.2:8080/'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
+
+    List<PersistedPayment> listToPersist = [];
+    List jsonList = jsonDecode(response.body);
+    jsonList.forEach((element) {
+      var jsonMap = Map<String, dynamic>.from(element);
+      listToPersist.add(PersistedPayment.fromJson(jsonMap));
+    });
+
+    listToPersist.forEach((payment) {Database.getDatabase().savePayment(payment);});
+
+    if (response.statusCode == 200) {
+      await http.delete(
+        Uri.parse('http://10.0.2.2:8080/'));
+    }
+
+
+    setState(() {});
+  }
+
+  void _clearAll() {
+    Database.getDatabase().clearAll();
+    setState(() {});
+  }
+
 }

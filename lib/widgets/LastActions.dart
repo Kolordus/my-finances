@@ -106,7 +106,7 @@ class LastActions extends StatelessWidget {
                           ),
                           Flexible(
                             child: Text(
-                                groupedEntities.values.elementAt(index).toString(),
+                                groupedEntities.values.elementAt(index).toStringAsFixed(2),
                                 style: TextStyle(fontSize: 25, color: Colors.pink)),
                           )
                         ],

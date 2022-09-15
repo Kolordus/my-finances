@@ -59,7 +59,7 @@ class Database {
     return totalAmount;
   }
 
-  Future<RangeValues> getHighestAndLowestAmount() async {
+  Future<RangeValues> getHighestAmount() async {
     if (_paymentsBox!.isEmpty)
       return RangeValues(0, 0);
 
@@ -121,7 +121,7 @@ class Database {
     await _cashAndCardAmount!.put(payMethod, newAmount);
   }
 
-  getSavedCashOrCard(String paymentMethod) {
+  getSumForMethod(String paymentMethod) {
     double? previousAmount = _cashAndCardAmount!.get(paymentMethod);
     if (previousAmount == null) {
       _cashAndCardAmount!.put(paymentMethod, 0);
@@ -143,9 +143,11 @@ class Database {
       current?.time == candidate.time &&
       current?.paymentMethod == candidate.paymentMethod;
 
-  List<PersistedPayment>? getAllEntries() {
-    return _paymentsBox?.values.toList();
+  void clearAll() async {
+    await this.clearEntries();
+    await this._cashAndCardAmount!.clear();
   }
 
 // todo: zrobić opcję wyciągania kabony z bankomatu - dodaje cash odejmuje z card
+// todo: jesli nie zadziala to jak powinno to wysylac tez balanse
 }

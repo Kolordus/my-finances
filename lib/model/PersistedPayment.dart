@@ -58,7 +58,7 @@ class PersistedPayment {
     'paymentMethod' : paymentMethod
   };
 
-  static PersistedPayment fromJson(Map<String, Object?> json) => PersistedPayment(
+  static PersistedPayment fromJson(Map<String, dynamic> json) => PersistedPayment(
       json['name'] as String,
       json['time'] as String,
       json['amount'].toString(),
