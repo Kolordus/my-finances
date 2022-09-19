@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:my_finances/model/PersistedPayment.dart';
+import 'package:my_finances/services/HttpService.dart';
 
 import '../dal/Database.dart';
 
@@ -245,55 +244,31 @@ class _TotalScreenState extends State<TotalScreen> {
   }
 
   void _exportData() async {
-    var card = await Database.getDatabase().getEntriesByPayMethod('Card');
-    var cash = await Database.getDatabase().getEntriesByPayMethod('Cash');
+    var cardEntries = await Database.getDatabase().getEntriesByPayMethod('Card');
+    var cashEntries = await Database.getDatabase().getEntriesByPayMethod('Cash');
 
-    final cardResponse = await http.post(
-      Uri.parse('http://10.0.2.2:8080/'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(card),
-    );
+    /* todo - by wysłac tą daną mogę to zrobić na dwa sposoby :
+    zsumowac to co jest w cashAmount plus wszystkie wpisy i to jako income wklepac
+    zrobić odpowiednią metode tutaj.
+    A może by zrobic StorageService? I tam trzymac logie a database trzymać tylko wywołania tych rzeczy???
+    */
 
-    final cashResponse = await http.post(
-      Uri.parse('http://10.0.2.2:8080/'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(cash),
-    );
+    await HttpService.sendToServer(cardEntries + cashEntries);
   }
 
   void _importData() async {
-    await Database.getDatabase().clearEntries();
+    var database = Database.getDatabase();
+    await database.clearEntries();
 
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:8080/'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-    );
-
-    List<PersistedPayment> listToPersist = [];
-    List jsonList = jsonDecode(response.body);
-    jsonList.forEach((element) {
-      var jsonMap = Map<String, dynamic>.from(element);
-      listToPersist.add(PersistedPayment.fromJson(jsonMap));
+    var imported = await HttpService.retrieveDataFrmServerAndClearDB();
+    imported.forEach((json) {
+      database.savePayment(PersistedPayment.fromJson(json));
     });
-
-    listToPersist.forEach((payment) {Database.getDatabase().savePayment(payment);});
-
-    if (response.statusCode == 200) {
-      await http.delete(
-        Uri.parse('http://10.0.2.2:8080/'));
-    }
-
 
     setState(() {});
   }
 
-  void _clearAll() {
+  void _clearAll() async {
     Database.getDatabase().clearAll();
     setState(() {});
   }

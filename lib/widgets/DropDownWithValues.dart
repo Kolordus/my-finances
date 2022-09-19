@@ -14,6 +14,7 @@ class DropDownWithValues extends StatelessWidget {
     return DropdownButton(
         value: selectedOperationType,
         items: PaymentType.values
+            .where((e) => e != PaymentType.INCOME)
             .map<DropdownMenuItem<String>>((PaymentType value) {
           return DropdownMenuItem<String>(
             value: value.name,

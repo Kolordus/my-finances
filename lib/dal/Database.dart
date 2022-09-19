@@ -41,6 +41,7 @@ class Database {
     _cashAndCardAmount!.put(payment.paymentMethod, currentAmount);
   }
 
+  // Card, Cash
   Future<List<PersistedPayment>> getEntriesByPayMethod(String paymentMethod) async {
     List<PersistedPayment> list = _paymentsBox!.values
         .where((element) => element.paymentMethod == paymentMethod)
@@ -59,7 +60,7 @@ class Database {
     return totalAmount;
   }
 
-  Future<RangeValues> getHighestAmount() async {
+  Future<RangeValues> getHighestAndLowestAmount() async {
     if (_paymentsBox!.isEmpty)
       return RangeValues(0, 0);
 

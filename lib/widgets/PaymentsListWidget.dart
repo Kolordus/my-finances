@@ -5,9 +5,10 @@ import 'package:my_finances/model/PersistedPayment.dart';
 import 'package:my_finances/widgets/SingleEntry.dart';
 
 import '../model/Filters.dart';
+import '../styles/TilesColors.dart';
 
-class LastActions extends StatelessWidget {
-  LastActions(
+class PaymentsListWidget extends StatelessWidget {
+  PaymentsListWidget(
       {Key? key,
       required this.paymentMethod,
       required this.refreshFunction,
@@ -28,6 +29,9 @@ class LastActions extends StatelessWidget {
     return FutureBuilder(
         future: Database.getDatabase().getEntriesByPayMethod(paymentMethod),
         builder: (builder, snapshot) {
+          if (snapshot.data == null)
+            return Center(child: CircularProgressIndicator());
+
           if (snapshot.connectionState == ConnectionState.waiting)
             return Center(child: CircularProgressIndicator());
 
@@ -38,12 +42,11 @@ class LastActions extends StatelessWidget {
                 a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 0 : 1);
           }
 
-          return _renderLastActionsWidget(context, groupByCategories, filters);
+          return _renderLastActionsWidget(groupByCategories, filters);
         });
   }
 
-  Widget _renderLastActionsWidget(
-      context, bool groupByCategories, Filters filters) {
+  Widget _renderLastActionsWidget(bool groupByCategories, Filters filters) {
     if (_paymentList.length == 0) {
       return Center(
           child: Text(
@@ -67,7 +70,6 @@ class LastActions extends StatelessWidget {
           ifAbsent: () => amountFromElement);
     });
 
-    
     double _totalExpensesAmount = groupedEntities.values.fold(0, (p, c) => p + c);
     
     return Column(
@@ -80,6 +82,10 @@ class LastActions extends StatelessWidget {
               shrinkWrap: true,
               itemCount: groupedEntities.keys.length,
               itemBuilder: (context, index) {
+                var currentElement = groupedEntities.keys
+                    .elementAt(index)
+                    .toString();
+
                 return Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15.0),
@@ -90,18 +96,15 @@ class LastActions extends StatelessWidget {
                     decoration: BoxDecoration(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                         gradient: LinearGradient(
-                            colors: [Colors.greenAccent, Colors.green])),
+                            colors: TilesColors.getColor(currentElement))),
                     child: Padding(
-                      padding: const EdgeInsets.all(15.0),
+                      padding: const EdgeInsets.all(8.0),
                       child: (Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Flexible(
                             child: Text(
-                                groupedEntities.keys
-                                    .elementAt(index)
-                                    .toString()
-                                    .replaceAll("_", " "),
+                                currentElement.replaceAll("_", " "),
                                 style: TextStyle(fontSize: 25)),
                           ),
                           Flexible(
@@ -135,6 +138,12 @@ class LastActions extends StatelessWidget {
   }
 
   Widget _renderList() {
+    // somehow sometimes it tries to render null so how come
+    //you say it'll never be null?!
+    if (_paymentList == null) {
+      return Container();
+    }
+
     return Container(
       child: ListView.builder(
           shrinkWrap: true,

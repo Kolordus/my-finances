@@ -18,7 +18,7 @@ class SingleEntry extends StatelessWidget {
       color: Colors.transparent,
       elevation: 0,
       child: Opacity(
-        opacity: .85,
+        opacity: .90,
         child: Container(
           decoration: BoxDecoration(
               borderRadius: BorderRadius.all(Radius.circular(20)),
@@ -27,7 +27,7 @@ class SingleEntry extends StatelessWidget {
             )
           ),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(5.0),
             child: (Column(
               children: [
                 Padding(
@@ -35,17 +35,22 @@ class SingleEntry extends StatelessWidget {
                   child: Text(payment.name,
                       style: TextStyle(fontSize: 18)),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(payment.paymentType.replaceAll("_", " ")),
-                    Text(payment.time),
-                    Text(double.parse(payment.amount).toStringAsFixed(2),
-                        style: TextStyle(
-                            fontSize: 25,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.pink)),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4,0,4,0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Text(payment.paymentType.replaceAll("_", " ")),
+                      new Spacer(),
+                      Text(payment.time),
+                      new Spacer(),
+                      Text(double.parse(payment.amount).toStringAsFixed(2),
+                          style: TextStyle(
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red)),
+                    ],
+                  ),
                 )
               ],
             )),

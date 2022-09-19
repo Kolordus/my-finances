@@ -6,7 +6,7 @@ import 'package:my_finances/model/PersistedPayment.dart';
 import 'package:my_finances/widgets/DropDownWithValues.dart';
 import '../dal/Database.dart';
 import '../model/Filters.dart';
-import '../widgets/LastActions.dart';
+import '../widgets/PaymentsListWidget.dart';
 import 'StepperInputScreenForFinance.dart';
 
 class FinanceTypeScreen extends StatefulWidget {
@@ -99,7 +99,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
                       child: Icon(Icons.add))),
               Expanded(
                   flex: 4,
-                  child: LastActions(
+                  child: PaymentsListWidget(
                       paymentMethod: widget.title,
                       refreshFunction: refreshTotalAmount,
                       groupByCategories: _groupByCategories,
