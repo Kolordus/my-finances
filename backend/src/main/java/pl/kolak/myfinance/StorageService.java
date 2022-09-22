@@ -18,7 +18,6 @@ public class StorageService {
         storageRepository.saveAll(list);
     }
 
-
     public List<PersistedPayment> getAll() {
         return storageRepository.findAll();
     }

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_finances/dal/Database.dart';
+import 'package:my_finances/model/PaymentMethod.dart';
 import 'package:my_finances/model/PaymentType.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
 import 'package:my_finances/widgets/DropDownWithValues.dart';
 
 class StepperInputScreenForFinance extends StatefulWidget {
-  final String paymentMethod;
+  final PaymentMethod paymentMethod;
 
   StepperInputScreenForFinance(this.paymentMethod);
 

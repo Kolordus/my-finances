@@ -13,15 +13,10 @@ public class Controller {
         this.storageService = storageService;
     }
 
-//    @PostMapping
-//    public void exportData(@RequestBody List<PersistedPayment> exportedData) {
-//        storageService.saveAll(exportedData);
-//    }
-
     @PostMapping
-    public void exportData(@RequestBody String exportedData) {
-        System.out.println(exportedData);
-//        storageService.saveAll(exportedData);
+    public void exportData(@RequestBody List<PersistedPayment> exportedData) {
+        exportedData.forEach(System.out::println);
+        storageService.saveAll(exportedData);
     }
 
     @GetMapping
@@ -33,8 +28,5 @@ public class Controller {
     public void deleteSavedEntries() {
         storageService.purgeData();
     }
-
-
-    public record PersistedPaymentDTO(String name, String time, String amount, String paymentType, String paymentMethod) { }
 
 }

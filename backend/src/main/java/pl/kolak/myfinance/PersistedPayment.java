@@ -40,4 +40,15 @@ public class PersistedPayment {
     public String getPaymentMethod() {
         return paymentMethod;
     }
+
+    @Override
+    public String toString() {
+        return "PersistedPayment{" +
+                "name='" + name + '\'' +
+                ", time='" + time + '\'' +
+                ", amount='" + amount + '\'' +
+                ", paymentType='" + paymentType + '\'' +
+                ", paymentMethod='" + paymentMethod + '\'' +
+                '}';
+    }
 }

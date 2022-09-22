@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:my_finances/model/PaymentMethod.dart';
 import 'package:my_finances/model/PaymentType.dart';
 
 import '../model/PersistedPayment.dart';
@@ -33,6 +34,7 @@ class Database {
     var currentAmount = this._cashAndCardAmount!.get(payment.paymentMethod);
     if (payment.paymentType == "INCOME") {
       currentAmount = currentAmount!;
+      currentAmount += toSave;
     }
     else {
       currentAmount = currentAmount! - toSave;
@@ -42,14 +44,15 @@ class Database {
   }
 
   // Card, Cash
-  Future<List<PersistedPayment>> getEntriesByPayMethod(String paymentMethod) async {
-    List<PersistedPayment> list = _paymentsBox!.values
-        .where((element) => element.paymentMethod == paymentMethod)
+  Future<List<PersistedPayment>> getEntriesByPayMethod(PaymentMethod paymentMethod) async {
+    List<PersistedPayment> list = await _paymentsBox!.values
+        .where((element) => _excludePreviousBalances(element))
+        .where((element) => element.paymentMethod == paymentMethod.name)
         .toList();
-
-    list.sort((a, b) => a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 1 : 0);
     return list;
   }
+
+  bool _excludePreviousBalances(PersistedPayment element) => element.name != "Balance" && element.paymentType != PaymentType.INCOME.toString();
 
   getSumOfEntries(List<PersistedPayment> list) {
     double totalAmount = 0;
@@ -99,7 +102,7 @@ class Database {
   }
 
   Future<void> addNewIncomeToBank(String amount, String incomeNameAmount,
-      String paymentMethod, bool isSalary) async {
+      PaymentMethod paymentMethod, bool isSalary) async {
     await _calculateAndSaveAmount(paymentMethod, amount);
 
     if (isSalary) {
@@ -109,17 +112,17 @@ class Database {
     }
   }
 
-  _saveInEntryList(String operationName, String amount, String paymentMethod) {
+  _saveInEntryList(String operationName, String amount, PaymentMethod paymentMethod) {
     PersistedPayment createPayment = PersistedPayment.createPayment(
         operationName, amount, PaymentType.INCOME.name, paymentMethod);
 
     savePayment(createPayment);
   }
 
-  Future<void> _calculateAndSaveAmount(String payMethod, String amount) async {
-    double? previousAmount = _cashAndCardAmount!.get(payMethod);
-    double newAmount = previousAmount! + double.parse(amount);
-    await _cashAndCardAmount!.put(payMethod, newAmount);
+  Future<void> _calculateAndSaveAmount(PaymentMethod payMethod, String amount) async {
+    double previousAmount = _cashAndCardAmount!.get(payMethod.name) ?? 0.0;
+    double newAmount = previousAmount + double.parse(amount);
+    await _cashAndCardAmount!.put(payMethod.name, newAmount);
   }
 
   getSumForMethod(String paymentMethod) {
@@ -148,6 +151,16 @@ class Database {
     await this.clearEntries();
     await this._cashAndCardAmount!.clear();
   }
+
+  Future<PersistedPayment> prepareDataForExport(PaymentMethod paymentMethod) async {
+    double sum = this._cashAndCardAmount!.get(paymentMethod.name)?.abs() ?? 0.0;
+    var list = await getEntriesByPayMethod(paymentMethod);
+    list.forEach((e) { sum += double.parse(e.amount);});
+
+    return PersistedPayment.createPayment('Balance', sum.toString(), PaymentType.INCOME.name, paymentMethod);
+  }
+
+
 
 // todo: zrobić opcję wyciągania kabony z bankomatu - dodaje cash odejmuje z card
 // todo: jesli nie zadziala to jak powinno to wysylac tez balanse

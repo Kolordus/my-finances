@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:my_finances/model/PaymentMethod.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
 import 'package:my_finances/services/HttpService.dart';
 
@@ -177,10 +178,7 @@ class _TotalScreenState extends State<TotalScreen> {
                                 actions: <Widget>[
                                   TextButton(
                                     onPressed: () async {
-                                      String whatIsSelected =
-                                          this.isSelected.elementAt(0)
-                                              ? "Card"
-                                              : "Cash";
+                                      PaymentMethod whatIsSelected = this.isSelected.elementAt(0) ? PaymentMethod.Card : PaymentMethod.Cash;
                                       await Database.getDatabase()
                                           .addNewIncomeToBank(
                                               addToBankAmountController.text,
@@ -244,16 +242,20 @@ class _TotalScreenState extends State<TotalScreen> {
   }
 
   void _exportData() async {
-    var cardEntries = await Database.getDatabase().getEntriesByPayMethod('Card');
-    var cashEntries = await Database.getDatabase().getEntriesByPayMethod('Cash');
+    Database database = Database.getDatabase();
 
-    /* todo - by wysłac tą daną mogę to zrobić na dwa sposoby :
-    zsumowac to co jest w cashAmount plus wszystkie wpisy i to jako income wklepac
-    zrobić odpowiednią metode tutaj.
-    A może by zrobic StorageService? I tam trzymac logie a database trzymać tylko wywołania tych rzeczy???
-    */
+    List<PersistedPayment> cashEntries = await getDataForExportForMethod(database, PaymentMethod.Cash);
+    List<PersistedPayment> cardEntries = await getDataForExportForMethod(database, PaymentMethod.Card);
 
     await HttpService.sendToServer(cardEntries + cashEntries);
+  }
+
+  Future<List<PersistedPayment>> getDataForExportForMethod(Database database, PaymentMethod paymentMethod) async {
+    List<PersistedPayment> payments = await database.getEntriesByPayMethod(paymentMethod);
+    var balanceFor = await database.prepareDataForExport(paymentMethod);
+    payments.add(balanceFor);
+
+    return payments;
   }
 
   void _importData() async {

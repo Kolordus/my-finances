@@ -42,7 +42,7 @@ class SingleEntry extends StatelessWidget {
                     children: [
                       Text(payment.paymentType.replaceAll("_", " ")),
                       new Spacer(),
-                      Text(payment.time),
+                      Text(_shortenTime()),
                       new Spacer(),
                       Text(double.parse(payment.amount).toStringAsFixed(2),
                           style: TextStyle(
@@ -59,4 +59,6 @@ class SingleEntry extends StatelessWidget {
       ),
     );
   }
+
+  String _shortenTime() => payment.time.substring(0, payment.time.lastIndexOf('.'));
 }

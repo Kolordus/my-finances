@@ -1,6 +1,7 @@
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:flutter/material.dart';
 import 'package:my_finances/dal/Database.dart';
+import 'package:my_finances/model/PaymentMethod.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
 import 'package:my_finances/widgets/SingleEntry.dart';
 
@@ -17,32 +18,32 @@ class PaymentsListWidget extends StatelessWidget {
       required this.sortedDesc})
       : super(key: key);
 
-  final String paymentMethod;
+  final PaymentMethod paymentMethod;
   final Function refreshFunction;
   final bool groupByCategories;
   final Filters filters;
   final bool sortedDesc;
-  late final List<PersistedPayment> _paymentList;
+  late List<PersistedPayment> _paymentList = [];
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
+    return FutureBuilder <List<PersistedPayment>>(
         future: Database.getDatabase().getEntriesByPayMethod(paymentMethod),
         builder: (builder, snapshot) {
-          if (snapshot.data == null)
-            return Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+            _paymentList = snapshot.data as List<PersistedPayment>;
 
-          if (snapshot.connectionState == ConnectionState.waiting)
-            return Center(child: CircularProgressIndicator());
+            _paymentList.sort((a, b) => a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 1 : 0);
 
-          _paymentList = snapshot.data as List<PersistedPayment>;
+            if (sortedDesc) {
+              _paymentList.sort((a, b) =>
+              a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 0 : 1);
+            }
 
-          if (sortedDesc) {
-            _paymentList.sort((a, b) =>
-                a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 0 : 1);
+            return _renderLastActionsWidget(groupByCategories, filters);
           }
 
-          return _renderLastActionsWidget(groupByCategories, filters);
+          return Center(child: CircularProgressIndicator());
         });
   }
 
@@ -166,7 +167,7 @@ class PaymentsListWidget extends StatelessWidget {
 
   Widget _renderFiltered() {
     List<PersistedPayment> filtersEntries =
-        _filterEntries(filters, paymentMethod);
+        _filterEntries(filters, paymentMethod.name);
 
     return Container(
       child: ListView.builder(

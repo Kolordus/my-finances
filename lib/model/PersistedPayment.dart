@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:my_finances/model/PaymentMethod.dart';
 
 part 'PersistedPayment.g.dart';
 
@@ -24,22 +25,28 @@ class PersistedPayment {
 
   PersistedPayment(this.name, this.time, this.amount, this.paymentType, this.paymentMethod);
 
-  static PersistedPayment createPayment(name, amount, paymentType, paymentMethod) {
-    return new PersistedPayment(name, getDate(), amount, paymentType, paymentMethod);
+  static PersistedPayment createPayment(name, amount, paymentType, PaymentMethod paymentMethod) {
+    return new PersistedPayment(name, getDate(), amount, paymentType, paymentMethod.name);
   }
 
   static String getDate() {
     DateTime date = DateTime.now();
-    String month = date.month < 10
-        ? '0' + date.month.toString()
-        : date.month.toString();
 
-    String day = date.day < 10
-        ? '0' + date.day.toString()
-        : date.day.toString();
+    String month = _getProperFormat(date.month);
+    String day = _getProperFormat(date.day);
+    String hour = _getProperFormat(date.hour);
+    String minute = _getProperFormat(date.minute);
+    String second = _getProperFormat(date.second);
 
-    return "${date.year}-$month-$day ${date.hour}:${date.minute}";
+    return "${date.year}-$month-$day $hour:$minute:$second.${date.microsecond}";
   }
+
+  static String _getProperFormat(int unit) {
+    return unit < 10
+        ? '0' + unit.toString()
+        : unit.toString();
+  }
+
 
   DateTime getDateAsDateTime() {
     return DateTime.parse(this.time);

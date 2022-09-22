@@ -1,6 +1,7 @@
 // ignore: import_of_legacy_library_into_null_safe
 
 import 'package:flutter/material.dart';
+import 'package:my_finances/model/PaymentMethod.dart';
 import 'package:my_finances/model/PaymentType.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
 import 'package:my_finances/widgets/DropDownWithValues.dart';
@@ -12,7 +13,7 @@ import 'StepperInputScreenForFinance.dart';
 class FinanceTypeScreen extends StatefulWidget {
   FinanceTypeScreen({Key? key, required this.title}) : super(key: key);
 
-  final String title;
+  final PaymentMethod title;
 
   @override
   _FinanceTypeScreenState createState() => _FinanceTypeScreenState();
@@ -41,8 +42,8 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
 
     refreshTotalAmount();
 
-    if (widget.title == 'Card') backgroundImage = "assets/images/bank-card.jpg";
-    if (widget.title == 'Cash') backgroundImage = "assets/images/notes.jpg";
+    if (widget.title == PaymentMethod.Card) backgroundImage = "assets/images/bank-card.jpg";
+    if (widget.title == PaymentMethod.Cash) backgroundImage = "assets/images/notes.jpg";
   }
 
   @override
@@ -153,7 +154,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
 
   Future<void> refreshTotalAmount() async {
     Database db = Database.getDatabase();
-    String paymentMethod = widget.title;
+    String paymentMethod = widget.title.name;
 
     double savedValue = await db.getSumForMethod(paymentMethod);
 

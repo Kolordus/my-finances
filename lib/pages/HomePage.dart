@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_finances/model/PaymentMethod.dart';
 import '../dal/Database.dart';
 import 'FinanceTypeScreen.dart';
 import 'TotalScreen.dart';
@@ -53,8 +54,8 @@ class _MyHomePageState extends State<MyHomePage> {
             })
           },
           children: [
-            FinanceTypeScreen(title: 'Card'),
-            FinanceTypeScreen(title: 'Cash'),
+            FinanceTypeScreen(title: PaymentMethod.Card),
+            FinanceTypeScreen(title: PaymentMethod.Cash),
             TotalScreen(),
           ],
         ));
