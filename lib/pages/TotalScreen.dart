@@ -20,10 +20,11 @@ class _TotalScreenState extends State<TotalScreen> {
   String _cash = '00.00';
   String _total = '00.00';
 
-  List<bool> isSelected = [false, false];
+  List<bool> _isSelected = [false, false];
   bool _isSalary = true;
-  var addToBankAmountController = TextEditingController();
-  final incomeNameController = TextEditingController();
+  var _addToBankAmountController = TextEditingController();
+  final _incomeNameController = TextEditingController();
+  bool _isLoading = false;
 
   String validateAmount(String amount) {
     return amount == 'null' ? '0.00' : amount;
@@ -67,7 +68,7 @@ class _TotalScreenState extends State<TotalScreen> {
               child: Text(widget.title.toUpperCase(),
                   style: getTextStyle(Colors.pink))),
           Flexible(
-            flex: 4,
+              flex: 4,
               child: Column(
                 children: [
                   Row(
@@ -111,14 +112,13 @@ class _TotalScreenState extends State<TotalScreen> {
                             builder: (context, setState) {
                               return AlertDialog(
                                 backgroundColor: Colors.lightBlue,
-                                title: Text("New Income"),
                                 content: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: TextField(
-                                        controller: addToBankAmountController,
+                                        controller: _addToBankAmountController,
                                         style: TextStyle(color: Colors.white),
                                         inputFormatters: [
                                           FilteringTextInputFormatter(
@@ -141,20 +141,21 @@ class _TotalScreenState extends State<TotalScreen> {
                                       onPressed: (int index) {
                                         setState(() {
                                           for (int buttonIndex = 0;
-                                              buttonIndex < isSelected.length;
+                                              buttonIndex < _isSelected.length;
                                               buttonIndex++) {
                                             if (buttonIndex == index) {
-                                              isSelected[buttonIndex] = true;
+                                              _isSelected[buttonIndex] = true;
                                             } else {
-                                              isSelected[buttonIndex] = false;
+                                              _isSelected[buttonIndex] = false;
                                             }
                                           }
                                         });
                                       },
-                                      isSelected: isSelected,
+                                      isSelected: _isSelected,
                                     ),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text('Salary'),
                                         Checkbox(
@@ -172,17 +173,21 @@ class _TotalScreenState extends State<TotalScreen> {
                                     _isSalary
                                         ? Text("")
                                         : TextField(
-                                            controller: incomeNameController),
+                                            controller: _incomeNameController),
                                   ],
                                 ),
+                                title: Text("New Income"),
                                 actions: <Widget>[
                                   TextButton(
                                     onPressed: () async {
-                                      PaymentMethod whatIsSelected = this.isSelected.elementAt(0) ? PaymentMethod.Card : PaymentMethod.Cash;
+                                      PaymentMethod whatIsSelected =
+                                          this._isSelected.elementAt(0)
+                                              ? PaymentMethod.Card
+                                              : PaymentMethod.Cash;
                                       await Database.getDatabase()
                                           .addNewIncomeToBank(
-                                              addToBankAmountController.text,
-                                              incomeNameController.text,
+                                              _addToBankAmountController.text,
+                                              _incomeNameController.text,
                                               whatIsSelected,
                                               this._isSalary);
                                       Navigator.pop(context);
@@ -203,26 +208,29 @@ class _TotalScreenState extends State<TotalScreen> {
               ],
             ),
           ),
-          Flexible(
+          _isLoading ? CircularProgressIndicator() : Flexible(
             flex: 1,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(onPressed: () {
-                    _exportData();
-                  },
-                  child: Text('Export data'),),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _exportData();
+                    },
+                    child: Text('Export data'),
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(onPressed: () {
-                    _importData();
-                  },
-                    child: Text('Import data'),),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _importData();
+                    },
+                    child: Text('Import data'),
+                  ),
                 ),
-
               ],
             ),
           ),
@@ -230,10 +238,12 @@ class _TotalScreenState extends State<TotalScreen> {
             flex: 1,
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(onPressed: () {
-                _clearAll();
-              },
-                child: Text('Clear All data'),),
+              child: ElevatedButton(
+                onPressed: () {
+                  _clearAll();
+                },
+                child: Text('Clear All data'),
+              ),
             ),
           ),
         ],
@@ -242,16 +252,34 @@ class _TotalScreenState extends State<TotalScreen> {
   }
 
   void _exportData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     Database database = Database.getDatabase();
 
-    List<PersistedPayment> cashEntries = await getDataForExportForMethod(database, PaymentMethod.Cash);
-    List<PersistedPayment> cardEntries = await getDataForExportForMethod(database, PaymentMethod.Card);
+    List<PersistedPayment> cashEntries =
+        await getDataForExportForMethod(database, PaymentMethod.Cash);
+    List<PersistedPayment> cardEntries =
+        await getDataForExportForMethod(database, PaymentMethod.Card);
 
-    await HttpService.sendToServer(cardEntries + cashEntries);
+    var isSuccess = await HttpService.sendToServer(cardEntries + cashEntries);
+    if (!isSuccess) {
+      await showDialogWithText(msg: "Cannot connect!");
+    }
+    else {
+      await showDialogWithText(msg: "Done");
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
-  Future<List<PersistedPayment>> getDataForExportForMethod(Database database, PaymentMethod paymentMethod) async {
-    List<PersistedPayment> payments = await database.getEntriesByPayMethod(paymentMethod);
+  Future<List<PersistedPayment>> getDataForExportForMethod(
+      Database database, PaymentMethod paymentMethod) async {
+    List<PersistedPayment> payments =
+        await database.getEntriesByPayMethod(paymentMethod);
     var balanceFor = await database.prepareDataForExport(paymentMethod);
     payments.add(balanceFor);
 
@@ -259,20 +287,55 @@ class _TotalScreenState extends State<TotalScreen> {
   }
 
   void _importData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     var database = Database.getDatabase();
     await database.clearEntries();
 
-    var imported = await HttpService.retrieveDataFrmServerAndClearDB();
-    imported.forEach((json) {
-      database.savePayment(PersistedPayment.fromJson(json));
-    });
+    var imported = await HttpService.retrieveDataFromServerAndClearDB();
+    if (imported == null) {
+      await showDialogWithText(msg: "Cannot connect");
+    }
+    else {
+      imported.forEach((json) {
+        database.savePayment(PersistedPayment.fromJson(json));
+      });
 
-    setState(() {});
+      await showDialogWithText(msg: "Done");
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   void _clearAll() async {
     Database.getDatabase().clearAll();
     setState(() {});
+  }
+
+  Future<void> showDialogWithText({String msg = ''}) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Text(msg),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).textTheme.labelLarge,
+              ),
+              child: const Text('Ok'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
 }

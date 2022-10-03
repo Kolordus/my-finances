@@ -1,5 +1,6 @@
 package pl.kolak.myfinance;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,7 +16,6 @@ public class Controller {
 
     @PostMapping
     public void exportData(@RequestBody List<PersistedPayment> exportedData) {
-        exportedData.forEach(System.out::println);
         storageService.saveAll(exportedData);
     }
 

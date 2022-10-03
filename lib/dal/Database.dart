@@ -43,7 +43,6 @@ class Database {
     _cashAndCardAmount!.put(payment.paymentMethod, currentAmount);
   }
 
-  // Card, Cash
   Future<List<PersistedPayment>> getEntriesByPayMethod(PaymentMethod paymentMethod) async {
     List<PersistedPayment> list = await _paymentsBox!.values
         .where((element) => _excludePreviousBalances(element))
