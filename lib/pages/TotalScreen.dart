@@ -337,5 +337,4 @@ class _TotalScreenState extends State<TotalScreen> {
       },
     );
   }
-
 }

@@ -182,7 +182,7 @@ class _FinanceTypeScreenState extends State<FinanceTypeScreen> {
     var currentDay = DateTime.now().day;
 
     DateTimeRange dateRange = DateTimeRange(
-        start: DateTime(currentYear, currentMonth, currentDay),
+        start: DateTime(currentYear, currentMonth, 1),
         end: DateTime(currentYear, currentMonth, currentDay + 1)
     );
 

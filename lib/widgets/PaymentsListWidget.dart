@@ -193,11 +193,12 @@ class PaymentsListWidget extends StatelessWidget {
             element.getAmountAsDouble(), filters.selectedRangeAmount))
         .where((element) => element.name.contains(filters.operationName))
         .where((element) =>
-            element.paymentType.contains(filters.selectedOperationType))
+            element.paymentType == filters.selectedOperationType)
         .toList();
 
     list.sort((a, b) =>
         a.getDateAsDateTime().isBefore(b.getDateAsDateTime()) ? 1 : 0);
+
     return list;
   }
 
