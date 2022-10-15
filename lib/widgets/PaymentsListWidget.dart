@@ -192,8 +192,7 @@ class PaymentsListWidget extends StatelessWidget {
         .where((element) => _isInRange(
             element.getAmountAsDouble(), filters.selectedRangeAmount))
         .where((element) => element.name.contains(filters.operationName))
-        .where((element) =>
-            element.paymentType == filters.selectedOperationType)
+        .where((element) => _filterByOperationType(element.paymentType, filters))
         .toList();
 
     list.sort((a, b) =>
@@ -202,7 +201,15 @@ class PaymentsListWidget extends StatelessWidget {
     return list;
   }
 
+  bool _filterByOperationType(String operationType, Filters filters) {
+    if (operationType.isNotEmpty)
+      return operationType.contains(filters.selectedOperationType);
+
+    return false;
+  }
+
   bool _isInRange(double amount, RangeValues values) {
     return amount >= values.start && amount <= values.end;
   }
+
 }

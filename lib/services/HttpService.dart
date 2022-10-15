@@ -5,7 +5,7 @@ import 'package:my_finances/model/PersistedPayment.dart';
 
 class HttpService {
   static final String PROTCOL = "http://";
-  static final String SERVER_IP = "10.0.2.2";
+  static final String SERVER_IP = "192.168.0.108";
   static final String SERVER_PORT = "8080";
   static final String CONTENT_TYPE = 'application/json; charset=UTF-8';
 
