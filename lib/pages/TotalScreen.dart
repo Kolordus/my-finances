@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_finances/model/PaymentMethod.dart';
 import 'package:my_finances/model/PersistedPayment.dart';
-import 'package:my_finances/services/HttpService.dart';
+import 'package:my_finances/services/InternetService.dart';
 
 import '../dal/Database.dart';
 
@@ -263,7 +263,7 @@ class _TotalScreenState extends State<TotalScreen> {
     List<PersistedPayment> cardEntries =
         await getDataForExportForMethod(database, PaymentMethod.Card);
 
-    var isSuccess = await HttpService.sendToServer(cardEntries + cashEntries);
+    var isSuccess = await InternetService.sendToServer(cardEntries + cashEntries);
     if (!isSuccess) {
       await showDialogWithText(msg: "Cannot connect!");
     }
@@ -278,10 +278,14 @@ class _TotalScreenState extends State<TotalScreen> {
 
   Future<List<PersistedPayment>> getDataForExportForMethod(
       Database database, PaymentMethod paymentMethod) async {
+
     List<PersistedPayment> payments =
         await database.getEntriesByPayMethod(paymentMethod);
+
     var balanceFor = await database.prepareDataForExport(paymentMethod);
-    payments.add(balanceFor);
+
+    if (double.parse(balanceFor.amount) != 0.0)
+      payments.add(balanceFor);
 
     return payments;
   }
@@ -294,7 +298,7 @@ class _TotalScreenState extends State<TotalScreen> {
     var database = Database.getDatabase();
     await database.clearEntries();
 
-    var imported = await HttpService.retrieveDataFromServerAndClearDB();
+    var imported = await InternetService.retrieveDataFromServerAndClearDB();
     if (imported == null) {
       await showDialogWithText(msg: "Cannot connect");
     }

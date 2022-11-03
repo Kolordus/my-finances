@@ -115,7 +115,7 @@ class _StepperInputScreenForFinanceState
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      primary: Colors.green,
+                      backgroundColor: Colors.green,
                     ),
                     onPressed: continued,
                     child:
@@ -165,7 +165,8 @@ class _StepperInputScreenForFinanceState
             style: TextStyle(color: Colors.white),
           ),
           content: Container(
-            child: DropDownWithValues(selectedOperationType: selectedOperationType,
+            child: DropDownWithValues(
+                selectedOperationType: selectedOperationType,
                 refreshParent: (String selected) {
                   setState(() {
                     selectedOperationType = selected;

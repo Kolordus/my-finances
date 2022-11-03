@@ -3,6 +3,8 @@ package pl.kolak.myfinance;
 
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -24,5 +26,23 @@ public class StorageService {
 
     public void purgeData() {
         storageRepository.deleteAll();
+    }
+
+    public void cleanFromFalseIncomeAndSave(List<PersistedPayment> exportedData) {
+        PersistedPayment income = getIncomeFromGivenData(exportedData);
+        List<PersistedPayment> incomesToDate = storageRepository.findAllByPaymentTypeEquals("INCOME");
+
+        if (incomesToDate.contains(income)) {
+            exportedData.remove(income);
+        }
+
+        storageRepository.saveAll(exportedData);
+    }
+
+    private PersistedPayment getIncomeFromGivenData(List<PersistedPayment> exportedData) {
+        return exportedData.stream()
+                .filter(pay -> pay.getPaymentType().equals("INCOME"))
+                .findFirst()
+                .orElseThrow();
     }
 }

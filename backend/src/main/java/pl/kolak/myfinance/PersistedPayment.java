@@ -3,6 +3,8 @@ package pl.kolak.myfinance;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Objects;
+
 @Document
 public class PersistedPayment {
     private final String name;
@@ -39,6 +41,27 @@ public class PersistedPayment {
 
     public String getPaymentMethod() {
         return paymentMethod;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PersistedPayment payment = (PersistedPayment) o;
+
+        String thisTime = time.split(" ")[0];
+        String otherTime = payment.time.split(" ")[0];
+
+        return Objects.equals(name, payment.name)
+                && Objects.equals(thisTime, otherTime)
+                && Objects.equals(amount, payment.amount)
+                && Objects.equals(paymentType, payment.paymentType)
+                && Objects.equals(paymentMethod, payment.paymentMethod);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, time, amount, paymentType, paymentMethod);
     }
 
     @Override

@@ -3,15 +3,15 @@ import 'package:http/http.dart' as http;
 
 import 'package:my_finances/model/PersistedPayment.dart';
 
-class HttpService {
+class InternetService {
   static final String PROTCOL = "http://";
-  static final String SERVER_IP = "192.168.0.108";
+  // static final String SERVER_IP = "192.168.0.108";
+  static final String SERVER_IP = "10.0.2.2";
   static final String SERVER_PORT = "8080";
   static final String CONTENT_TYPE = 'application/json; charset=UTF-8';
 
   static Future<bool> sendToServer(List<PersistedPayment> allEntries) async {
     var isSuccess = false;
-
     Future<bool> waitFor = timer(2);
     Future postRequest = http.post(
       Uri.parse('$PROTCOL$SERVER_IP:$SERVER_PORT/'),
@@ -28,9 +28,7 @@ class HttpService {
       if (firstToBeResolved is http.Response) {
         isSuccess = true;
       }
-    } on Exception catch (_) {
-
-    }
+    } on Exception catch (_) {}
 
     return isSuccess;
   }
@@ -57,13 +55,10 @@ class HttpService {
             Uri.parse('$PROTCOL$SERVER_IP:$SERVER_PORT/'));
 
       }
-    } on Exception catch (_) {
-
-    }
+    } on Exception catch (_) {}
 
     return response;
   }
-
 
   static Future<bool> timer(int seconds) async {
     await Future.delayed(Duration(seconds: seconds));

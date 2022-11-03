@@ -2,7 +2,10 @@ package pl.kolak.myfinance;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class Controller {
@@ -13,9 +16,13 @@ public class Controller {
         this.storageService = storageService;
     }
 
-    @PostMapping
-    public void exportData(@RequestBody List<PersistedPayment> exportedData) {
-        storageService.saveAll(exportedData);
+    @PostMapping()
+    public void saveDataForReports(@RequestBody List<PersistedPayment> exportedData) {
+        if (storageService.getAll().containsAll(exportedData)) {
+            return;
+        }
+
+        storageService.cleanFromFalseIncomeAndSave(exportedData);
     }
 
     @GetMapping
